@@ -36,11 +36,11 @@ A comprehensive [Copier](https://copier.readthedocs.io/) template for creating w
 
 ## Quick Start
 
-1. **Install Copier** (if you haven't already):
+1. **Install Copier and extensions** (if you haven't already):
    ```bash
-   pipx install copier
+   pipx install copier copier_templates_extensions
    # or
-   uv tool install copier
+   uv tool install --with copier_templates_extensions copier
    ```
 
 2. **Generate a new project**:

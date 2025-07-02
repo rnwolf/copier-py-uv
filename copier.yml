@@ -10,6 +10,8 @@ _envops:
   variable_end_string: "}}"
   comment_start_string: "{#"
   comment_end_string: "#}"
+_jinja_extensions:
+  - copier_templates_extensions.TemplateExtensionLoader
 
 # Project metadata
 project_name:
