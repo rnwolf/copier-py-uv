@@ -46,11 +46,11 @@ This project follows the **src layout** pattern for better import handling and t
    # Standard library first
    import os
    from pathlib import Path
-   
+
    # Third-party packages
    {% if include_cli %}import click{% endif %}
    from loguru import logger
-   
+
    # Local imports
    from {{ package_name }}.core import main_function
    ```
@@ -59,7 +59,7 @@ This project follows the **src layout** pattern for better import handling and t
    ```python
    # Use specific exceptions
    from {{ package_name }}.exceptions import {{ package_name.title() }}Error
-   
+
    # Log errors appropriately
    logger.error("Descriptive error message: {}", error_details)
    ```
@@ -67,9 +67,9 @@ This project follows the **src layout** pattern for better import handling and t
 3. **Type Hints**:
    ```python
    from typing import Optional, List, Dict, Any
-   
+
    def process_data(
-       data: List[Dict[str, Any]], 
+       data: List[Dict[str, Any]],
        options: Optional[Dict[str, str]] = None
    ) -> Dict[str, Any]:
        """Process data with optional configuration."""

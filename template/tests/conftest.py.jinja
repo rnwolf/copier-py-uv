@@ -46,7 +46,7 @@ def temp_file(temp_directory):
 def temp_json_file(temp_directory, sample_data):
     """Provide a temporary JSON file with sample data."""
     import json
-    
+
     temp_file = temp_directory / "test_data.json"
     with open(temp_file, "w") as f:
         json.dump(sample_data, f)
@@ -86,19 +86,19 @@ def isolated_cli_runner():
 def mock_logger(monkeypatch):
     """Mock the logger to capture log messages during testing."""
     logged_messages = []
-    
+
     def mock_log_function(level):
         def log_func(message, *args, **kwargs):
             formatted_message = message.format(*args, **kwargs) if args or kwargs else message
             logged_messages.append((level, formatted_message))
         return log_func
-    
+
     # Mock different log levels
     monkeypatch.setattr("loguru.logger.debug", mock_log_function("DEBUG"))
     monkeypatch.setattr("loguru.logger.info", mock_log_function("INFO"))
     monkeypatch.setattr("loguru.logger.warning", mock_log_function("WARNING"))
     monkeypatch.setattr("loguru.logger.error", mock_log_function("ERROR"))
-    
+
     return logged_messages
 
 
@@ -115,7 +115,7 @@ def clean_environment(monkeypatch):
 def configure_test_logging():
     """Configure logging for tests to be less verbose."""
     from loguru import logger
-    
+
     # Remove default handler and add a test-specific one
     logger.remove()
     logger.add(
@@ -144,7 +144,7 @@ def pytest_collection_modifyitems(config, items):
         # Mark slow tests
         if "slow" in item.nodeid or "integration" in item.nodeid:
             item.add_marker(pytest.mark.slow)
-        
+
         # Mark integration tests
         if "integration" in item.nodeid or "test_integration" in item.name:
             item.add_marker(pytest.mark.integration)
@@ -164,17 +164,17 @@ from pathlib import Path
 
 class BaseTestCase(unittest.TestCase):
     """Base test case with common utilities."""
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
         self.temp_path = Path(self.temp_dir)
-    
+
     def tearDown(self):
         """Clean up test fixtures."""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
-    
+
     def get_sample_data(self):
         """Get sample data for testing."""
         return [

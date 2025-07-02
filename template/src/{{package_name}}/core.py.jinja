@@ -6,10 +6,10 @@ from loguru import logger
 
 def main_function() -> str:
     """Main function that demonstrates the core functionality.
-    
+
     Returns:
         str: A greeting message indicating the package is working.
-        
+
     Example:
         >>> from {{ package_name }} import main_function
         >>> result = main_function()
@@ -21,21 +21,21 @@ def main_function() -> str:
 
 
 {% if include_cli %}def process_data(
-    data: List[Dict[str, Any]], 
+    data: List[Dict[str, Any]],
     options: Optional[Dict[str, str]] = None
 ) -> Dict[str, Any]:
     """Process a list of data dictionaries with optional configuration.
-    
+
     Args:
         data: List of dictionaries containing data to process
         options: Optional configuration dictionary
-        
+
     Returns:
         Dict containing processed results and metadata
-        
+
     Raises:
         ValueError: If data is empty or invalid
-        
+
     Example:
         >>> data = [{"name": "test", "value": 42}]
         >>> result = process_data(data)
@@ -44,14 +44,14 @@ def main_function() -> str:
     """
     if not data:
         raise ValueError("Data cannot be empty")
-    
+
     logger.info("Processing {} items", len(data))
-    
+
     # Apply default options
     config = {"format": "json", "validate": True}
     if options:
         config.update(options)
-    
+
     # Process the data
     processed_items = []
     for item in data:
@@ -59,30 +59,30 @@ def main_function() -> str:
             logger.warning("Item missing 'name' field: {}", item)
             continue
         processed_items.append(item)
-    
+
     result = {
         "count": len(processed_items),
         "items": processed_items,
         "config": config,
         "success": True
     }
-    
+
     logger.info("Processed {} items successfully", len(processed_items))
     return result
 
 
 {% endif %}def calculate_statistics(numbers: List[float]) -> Dict[str, float]:
     """Calculate basic statistics for a list of numbers.
-    
+
     Args:
         numbers: List of numeric values
-        
+
     Returns:
         Dictionary containing mean, median, min, max, and count
-        
+
     Raises:
         ValueError: If the numbers list is empty
-        
+
     Example:
         >>> stats = calculate_statistics([1, 2, 3, 4, 5])
         >>> print(stats["mean"])
@@ -90,17 +90,17 @@ def main_function() -> str:
     """
     if not numbers:
         raise ValueError("Numbers list cannot be empty")
-    
+
     sorted_numbers = sorted(numbers)
     count = len(numbers)
-    
+
     # Calculate statistics
     mean = sum(numbers) / count
     median = (
         sorted_numbers[count // 2] if count % 2 == 1
         else (sorted_numbers[count // 2 - 1] + sorted_numbers[count // 2]) / 2
     )
-    
+
     stats = {
         "mean": mean,
         "median": median,
@@ -108,21 +108,21 @@ def main_function() -> str:
         "max": max(numbers),
         "count": count,
     }
-    
+
     logger.debug("Calculated statistics: {}", stats)
     return stats
 
 
 def validate_input(data: Any, required_type: type) -> bool:
     """Validate that input data matches the required type.
-    
+
     Args:
         data: The data to validate
         required_type: The expected type
-        
+
     Returns:
         True if data matches the required type, False otherwise
-        
+
     Example:
         >>> validate_input("hello", str)
         True
@@ -130,12 +130,12 @@ def validate_input(data: Any, required_type: type) -> bool:
         False
     """
     is_valid = isinstance(data, required_type)
-    
+
     if not is_valid:
         logger.warning(
-            "Validation failed: expected {}, got {}", 
-            required_type.__name__, 
+            "Validation failed: expected {}, got {}",
+            required_type.__name__,
             type(data).__name__
         )
-    
+
     return is_valid

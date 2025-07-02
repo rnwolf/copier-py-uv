@@ -14,18 +14,18 @@ from typing import Tuple
 def get_current_version() -> str:
     """Get the current version from the package __init__.py file."""
     init_file = Path("src/{{ package_name }}/__init__.py")
-    
+
     if not init_file.exists():
         raise FileNotFoundError(f"Package init file not found: {init_file}")
-    
+
     content = init_file.read_text(encoding="utf-8")
-    
+
     # Look for __version__ = "x.y.z" pattern
     version_match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
-    
+
     if not version_match:
         raise ValueError("Version string not found in __init__.py")
-    
+
     return version_match.group(1)
 
 
@@ -33,15 +33,15 @@ def parse_version(version: str) -> Tuple[int, int, int]:
     """Parse a semantic version string into components."""
     # Handle pre-release versions by taking only the main version part
     main_version = version.split('-')[0]
-    
+
     try:
         parts = main_version.split('.')
         if len(parts) != 3:
             raise ValueError(f"Invalid version format: {version}")
-        
+
         major, minor, patch = map(int, parts)
         return major, minor, patch
-    
+
     except ValueError as e:
         raise ValueError(f"Invalid version format: {version}") from e
 
@@ -49,7 +49,7 @@ def parse_version(version: str) -> Tuple[int, int, int]:
 def bump_version(version: str, part: str) -> str:
     """Bump the specified part of the version."""
     major, minor, patch = parse_version(version)
-    
+
     if part == "major":
         major += 1
         minor = 0
@@ -61,7 +61,7 @@ def bump_version(version: str, part: str) -> str:
         patch += 1
     else:
         raise ValueError(f"Invalid version part: {part}")
-    
+
     return f"{major}.{minor}.{patch}"
 
 
@@ -70,52 +70,52 @@ def update_version_in_file(file_path: Path, old_version: str, new_version: str) 
     if not file_path.exists():
         print(f"Warning: File not found: {file_path}")
         return False
-    
+
     content = file_path.read_text(encoding="utf-8")
-    
+
     # Replace version strings
     patterns = [
         (rf'__version__\s*=\s*["\']({re.escape(old_version)})["\']', f'__version__ = "{new_version}"'),
         (rf'version\s*=\s*["\']({re.escape(old_version)})["\']', f'version = "{new_version}"'),
         (rf'version:\s*({re.escape(old_version)})', f'version: {new_version}'),
     ]
-    
+
     updated = False
     for pattern, replacement in patterns:
         if re.search(pattern, content):
             content = re.sub(pattern, replacement, content)
             updated = True
-    
+
     if updated:
         file_path.write_text(content, encoding="utf-8")
         print(f"Updated version in: {file_path}")
         return True
-    
+
     return False
 
 
 def update_changelog(new_version: str) -> None:
     """Add a new version entry to the changelog."""
     changelog_file = Path("CHANGELOG.md")
-    
+
     if not changelog_file.exists():
         print("Warning: CHANGELOG.md not found")
         return
-    
+
     content = changelog_file.read_text(encoding="utf-8")
-    
+
     # Look for the "Unreleased" section
     unreleased_pattern = r"## \[Unreleased\]"
-    
+
     if re.search(unreleased_pattern, content):
         # Add new version section after Unreleased
         from datetime import datetime
         today = datetime.now().strftime("%Y-%m-%d")
-        
+
         new_section = f"""## [Unreleased]
 
 ## [{new_version}] - {today}"""
-        
+
         content = re.sub(unreleased_pattern, new_section, content)
         changelog_file.write_text(content, encoding="utf-8")
         print(f"Updated CHANGELOG.md with version {new_version}")
@@ -136,37 +136,37 @@ def main() -> None:
         action="store_true",
         help="Show what would be changed without making changes"
     )
-    
+
     args = parser.parse_args()
-    
+
     try:
         # Get current version
         current_version = get_current_version()
         print(f"Current version: {current_version}")
-        
+
         # Calculate new version
         new_version = bump_version(current_version, args.part)
         print(f"New version: {new_version}")
-        
+
         if args.dry_run:
             print("Dry run - no files will be modified")
             return
-        
+
         # Files to update
         files_to_update = [
             Path("src/{{ package_name }}/__init__.py"),
             Path("pyproject.toml"),
         ]
-        
+
         # Update version in files
         updated_files = []
         for file_path in files_to_update:
             if update_version_in_file(file_path, current_version, new_version):
                 updated_files.append(file_path)
-        
+
         # Update changelog
         update_changelog(new_version)
-        
+
         if updated_files:
             print(f"\n✅ Successfully bumped version from {current_version} to {new_version}")
             print("Updated files:")
@@ -180,7 +180,7 @@ def main() -> None:
         else:
             print("❌ No files were updated")
             sys.exit(1)
-    
+
     except Exception as e:
         print(f"❌ Error: {e}")
         sys.exit(1)

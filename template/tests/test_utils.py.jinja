@@ -28,7 +28,7 @@ def test_configure_logging_with_file(temp_directory):
     """Test logging configuration with file output."""
     log_file = temp_directory / "test.log"
     configure_logging("DEBUG", file_path=log_file)
-    
+
     # Log file should be created (though it might be empty initially)
     # We can't easily test the content without generating log messages
 
@@ -72,18 +72,18 @@ def test_load_environment_variables_valid_file(temp_env_file):
         if var in os.environ:
             original_values[var] = os.environ[var]
             del os.environ[var]
-    
+
     try:
         result = load_environment_variables(temp_env_file)
-        
+
         assert isinstance(result, dict)
         assert len(result) > 0
-        
+
         # Check that variables were loaded into os.environ
         assert os.environ.get("DEBUG") == "true"
         assert os.environ.get("LOG_LEVEL") == "DEBUG"
         assert os.environ.get("TEST_VAR") == "test_value"
-        
+
     finally:
         # Restore original environment
         for var in test_vars:
@@ -97,18 +97,18 @@ def test_load_environment_variables_existing_vars(temp_directory):
     """Test that existing environment variables are not overwritten."""
     # Set an environment variable
     os.environ["EXISTING_VAR"] = "original_value"
-    
+
     # Create env file with same variable
     env_file = temp_directory / ".env"
     env_file.write_text("EXISTING_VAR=new_value\n")
-    
+
     try:
         result = load_environment_variables(env_file)
-        
+
         # Should not overwrite existing variable
         assert os.environ["EXISTING_VAR"] == "original_value"
         assert "EXISTING_VAR" not in result  # Not in loaded vars since it wasn't set
-        
+
     finally:
         if "EXISTING_VAR" in os.environ:
             del os.environ["EXISTING_VAR"]
@@ -125,13 +125,13 @@ ANOTHER_VALID=another_value
 =invalid_empty_key
 """
     env_file.write_text(env_content)
-    
+
     result = load_environment_variables(env_file)
-    
+
     # Should load valid variables and skip invalid ones
     assert "VALID_VAR" in result or os.environ.get("VALID_VAR") == "valid_value"
     assert "ANOTHER_VALID" in result or os.environ.get("ANOTHER_VALID") == "another_value"
-    
+
     # Clean up
     for var in ["VALID_VAR", "ANOTHER_VALID"]:
         if var in os.environ:
@@ -142,9 +142,9 @@ def test_ensure_directory_new_directory(temp_directory):
     """Test creating a new directory."""
     new_dir = temp_directory / "new" / "nested" / "directory"
     assert not new_dir.exists()
-    
+
     result = ensure_directory(new_dir)
-    
+
     assert result == new_dir
     assert new_dir.exists()
     assert new_dir.is_dir()
@@ -153,7 +153,7 @@ def test_ensure_directory_new_directory(temp_directory):
 def test_ensure_directory_existing_directory(temp_directory):
     """Test ensuring an existing directory."""
     result = ensure_directory(temp_directory)
-    
+
     assert result == temp_directory
     assert temp_directory.exists()
     assert temp_directory.is_dir()
@@ -163,7 +163,7 @@ def test_ensure_directory_string_path(temp_directory):
     """Test ensure_directory with string path."""
     new_dir_str = str(temp_directory / "string_path")
     result = ensure_directory(new_dir_str)
-    
+
     assert isinstance(result, Path)
     assert result.exists()
     assert result.is_dir()
@@ -173,9 +173,9 @@ def test_safe_file_write_new_file(temp_directory):
     """Test writing to a new file."""
     file_path = temp_directory / "new_file.txt"
     content = "Hello, world!"
-    
+
     safe_file_write(file_path, content)
-    
+
     assert file_path.exists()
     assert file_path.read_text() == content
 
@@ -185,16 +185,16 @@ def test_safe_file_write_existing_file_with_backup(temp_directory):
     file_path = temp_directory / "existing_file.txt"
     original_content = "Original content"
     new_content = "New content"
-    
+
     # Create original file
     file_path.write_text(original_content)
-    
+
     # Write new content
     safe_file_write(file_path, new_content, backup=True)
-    
+
     # Check new content
     assert file_path.read_text() == new_content
-    
+
     # Check backup exists
     backup_path = file_path.with_suffix(f"{file_path.suffix}.bak")
     assert backup_path.exists()
@@ -206,16 +206,16 @@ def test_safe_file_write_no_backup(temp_directory):
     file_path = temp_directory / "existing_file.txt"
     original_content = "Original content"
     new_content = "New content"
-    
+
     # Create original file
     file_path.write_text(original_content)
-    
+
     # Write new content without backup
     safe_file_write(file_path, new_content, backup=False)
-    
+
     # Check new content
     assert file_path.read_text() == new_content
-    
+
     # Check no backup exists
     backup_path = file_path.with_suffix(f"{file_path.suffix}.bak")
     assert not backup_path.exists()
@@ -225,9 +225,9 @@ def test_safe_file_write_custom_encoding(temp_directory):
     """Test writing file with custom encoding."""
     file_path = temp_directory / "encoded_file.txt"
     content = "Hello, 世界!"  # Content with unicode
-    
+
     safe_file_write(file_path, content, encoding="utf-8")
-    
+
     assert file_path.exists()
     assert file_path.read_text(encoding="utf-8") == content
 
@@ -265,13 +265,13 @@ def test_flatten_dict_simple():
             "d": 3
         }
     }
-    
+
     expected = {
         "a": 1,
         "b.c": 2,
         "b.d": 3
     }
-    
+
     result = flatten_dict(nested)
     assert result == expected
 
@@ -287,11 +287,11 @@ def test_flatten_dict_deep_nesting():
             }
         }
     }
-    
+
     expected = {
         "a.b.c.d": 1
     }
-    
+
     result = flatten_dict(nested)
     assert result == expected
 
@@ -303,11 +303,11 @@ def test_flatten_dict_custom_separator():
             "b": 1
         }
     }
-    
+
     expected = {
         "a_b": 1
     }
-    
+
     result = flatten_dict(nested, separator="_")
     assert result == expected
 
@@ -319,11 +319,11 @@ def test_flatten_dict_with_prefix():
             "b": 1
         }
     }
-    
+
     expected = {
         "prefix.a.b": 1
     }
-    
+
     result = flatten_dict(nested, prefix="prefix")
     assert result == expected
 
@@ -339,9 +339,9 @@ def test_flatten_dict_mixed_types():
             "none": None
         }
     }
-    
+
     result = flatten_dict(nested)
-    
+
     assert result["string"] == "value"
     assert result["number"] == 42
     assert result["list"] == [1, 2, 3]
@@ -378,63 +378,63 @@ from {{ package_name }}.utils import (
 
 class TestUtils(unittest.TestCase):
     """Test utility functions."""
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.temp_dir = tempfile.mkdtemp()
         self.temp_path = Path(self.temp_dir)
-    
+
     def tearDown(self):
         """Clean up test fixtures."""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
-    
+
     def test_configure_logging_basic(self):
         """Test basic logging configuration."""
         # This test mainly ensures the function doesn't crash
         configure_logging("INFO")
-    
+
     def test_get_project_root(self):
         """Test getting project root directory."""
         root = get_project_root()
         self.assertIsInstance(root, Path)
         self.assertTrue(root.exists())
         self.assertTrue(root.is_dir())
-    
+
     def test_load_environment_variables_nonexistent_file(self):
         """Test loading environment variables from nonexistent file."""
         result = load_environment_variables("nonexistent.env")
         self.assertIsInstance(result, dict)
         self.assertEqual(len(result), 0)
-    
+
     def test_ensure_directory_new_directory(self):
         """Test creating a new directory."""
         new_dir = self.temp_path / "new" / "nested" / "directory"
         self.assertFalse(new_dir.exists())
-        
+
         result = ensure_directory(new_dir)
-        
+
         self.assertEqual(result, new_dir)
         self.assertTrue(new_dir.exists())
         self.assertTrue(new_dir.is_dir())
-    
+
     def test_safe_file_write_new_file(self):
         """Test writing to a new file."""
         file_path = self.temp_path / "new_file.txt"
         content = "Hello, world!"
-        
+
         safe_file_write(file_path, content)
-        
+
         self.assertTrue(file_path.exists())
         self.assertEqual(file_path.read_text(), content)
-    
+
     def test_format_file_size_basic(self):
         """Test basic file size formatting."""
         self.assertEqual(format_file_size(0), "0 B")
         self.assertEqual(format_file_size(512), "512 B")
         self.assertEqual(format_file_size(1024), "1.0 KB")
         self.assertEqual(format_file_size(1048576), "1.0 MB")
-    
+
     def test_flatten_dict_simple(self):
         """Test flattening a simple nested dictionary."""
         nested = {
@@ -444,16 +444,16 @@ class TestUtils(unittest.TestCase):
                 "d": 3
             }
         }
-        
+
         expected = {
             "a": 1,
             "b.c": 2,
             "b.d": 3
         }
-        
+
         result = flatten_dict(nested)
         self.assertEqual(result, expected)
-    
+
     def test_flatten_dict_empty(self):
         """Test flattening empty dictionary."""
         result = flatten_dict({})
