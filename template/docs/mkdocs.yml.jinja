@@ -94,7 +94,7 @@ extra_css:
 extra_javascript:
   - js/custom.js
 
-copyright: Copyright &copy; {% now 'utc', '%Y' %} {{ author_name }}
+copyright: Copyright &copy; {{ "now"|strftime("%Y") }} {{ author_name }}
 {% else %}# MkDocs Configuration
 
 site_name: {{ project_name }}
