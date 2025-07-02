@@ -62,6 +62,25 @@ A comprehensive [Copier](https://copier.readthedocs.io/) template for creating w
    duty setup
    ```
 
+## Template Structure
+
+```
+copier-py-uv/
+├── copier.yml                    # Main configuration
+├── README.md                     # Template documentation
+├── TEMPLATE_README.md            # Instructions for template users
+├── template/                     # Template root
+│   ├── .copier-answers.yml.jinja # For template updates
+│   ├── pyproject.toml.jinja      # Project configuration
+│   ├── README.md.jinja           # Generated project README
+│   ├── .gitignore.jinja          # Git ignore patterns
+│   ├── src/                      # Source code templates
+│   ├── tests/                    # Test templates
+│   ├── docs/                     # Documentation templates
+│   └── scripts/                  # Utility script templates
+└── examples/                     # Example configurations
+```
+
 ## Template Options
 
 The template will prompt you for various configuration options:
