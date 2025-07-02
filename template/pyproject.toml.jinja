@@ -10,7 +10,7 @@ readme = "README.md"
 license = {file = "LICENSE.md"}
 requires-python = ">={{ python_version }}"
 authors = [
-    {name = "{{ author_name }}", email = "{{ author_email }}"},
+    {% if author_name and author_email %}{name = "{{ author_name }}", email = "{{ author_email }}"},{% elif author_name %}{name = "{{ author_name }}"},{% elif author_email %}{email = "{{ author_email }}"},{% else %}# Author information not provided{% endif %}
 ]
 keywords = [{% for keyword in keywords.split(',') %}"{{ keyword.strip() }}"{% if not loop.last %}, {% endif %}{% endfor %}]
 classifiers = [

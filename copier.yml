@@ -139,6 +139,13 @@ keywords:
   default: "utility, tool"
 
 _tasks:
+  - command: "mkdir -p src/{{ package_name }}"
+  - command: "cp -r src/package/* src/{{ package_name }}/"
+  - command: "rm -rf src/package"
+  - when: "{{ not include_submodule }}"
+    command: "rm -rf src/{{ package_name }}/submodule"
+  - when: "{{ not include_submodule }}"
+    command: "rm -rf tests/test_submodule"
   - command: "echo 'Template generation completed!'"
   - when: "{{ include_pre_commit }}"
     command: "echo 'Do not forget to run pre-commit install after setting up your environment'"

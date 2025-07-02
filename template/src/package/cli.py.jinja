@@ -1,0 +1,252 @@
+{% if include_cli %}"""Command-line interface for {{ project_name }}."""
+
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import click
+from loguru import logger
+
+from {{ package_name }} import __version__
+from {{ package_name }}.core import main_function, process_data, calculate_statistics
+from {{ package_name }}.utils import configure_logging, load_environment_variables
+
+
+@click.group()
+@click.version_option(version=__version__, prog_name="{{ project_slug }}")
+@click.option(
+    "--verbose", "-v",
+    count=True,
+    help="Increase verbosity (use -v, -vv, or -vvv)"
+)
+@click.option(
+    "--log-file",
+    type=click.Path(),
+    help="Write logs to specified file"
+)
+@click.option(
+    "--env-file",
+    type=click.Path(exists=True),
+    help="Load environment variables from file"
+)
+@click.pass_context
+def main(
+    ctx: click.Context,
+    verbose: int,
+    log_file: Optional[str],
+    env_file: Optional[str]
+) -> None:
+    """{{ project_description }}
+    
+    Use --help with any command to see detailed usage information.
+    """
+    # Ensure context object exists
+    ctx.ensure_object(dict)
+    
+    # Configure logging based on verbosity
+    log_levels = ["WARNING", "INFO", "DEBUG"]
+    log_level = log_levels[min(verbose, len(log_levels) - 1)]
+    
+    configure_logging(
+        level=log_level,
+        file_path=log_file
+    )
+    
+    # Load environment variables
+    if env_file:
+        load_environment_variables(env_file)
+    else:
+        load_environment_variables()  # Load from default .env
+    
+    # Store configuration in context
+    ctx.obj["verbose"] = verbose
+    ctx.obj["log_level"] = log_level
+    
+    logger.debug("CLI initialized with log level: {}", log_level)
+
+
+@main.command()
+@click.pass_context
+def hello(ctx: click.Context) -> None:
+    """Say hello and demonstrate basic functionality."""
+    try:
+        result = main_function()
+        click.echo(result)
+        logger.info("Hello command executed successfully")
+    except Exception as e:
+        logger.error("Hello command failed: {}", e)
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("data_file", type=click.Path(exists=True))
+@click.option(
+    "--format", "output_format",
+    type=click.Choice(["json", "yaml", "csv"]),
+    default="json",
+    help="Output format for processed data"
+)
+@click.option(
+    "--validate/--no-validate",
+    default=True,
+    help="Validate input data"
+)
+@click.option(
+    "--output", "-o",
+    type=click.Path(),
+    help="Output file (default: stdout)"
+)
+@click.pass_context
+def process(
+    ctx: click.Context,
+    data_file: str,
+    output_format: str,
+    validate: bool,
+    output: Optional[str]
+) -> None:
+    """Process data from a file.
+    
+    DATA_FILE should contain JSON data to process.
+    """
+    import json
+    
+    try:
+        # Read input data
+        with open(data_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        if not isinstance(data, list):
+            raise click.ClickException("Data file must contain a JSON array")
+        
+        # Process the data
+        options = {
+            "format": output_format,
+            "validate": validate
+        }
+        
+        result = process_data(data, options)
+        
+        # Format output
+        if output_format == "json":
+            output_text = json.dumps(result, indent=2)
+        elif output_format == "yaml":
+            import yaml
+            output_text = yaml.dump(result, default_flow_style=False)
+        elif output_format == "csv":
+            # Simple CSV output for demonstration
+            items = result.get("items", [])
+            if items and isinstance(items[0], dict):
+                import csv
+                import io
+                
+                output_buffer = io.StringIO()
+                if items:
+                    writer = csv.DictWriter(output_buffer, fieldnames=items[0].keys())
+                    writer.writeheader()
+                    writer.writerows(items)
+                output_text = output_buffer.getvalue()
+            else:
+                output_text = "No data to output in CSV format"
+        
+        # Write output
+        if output:
+            with open(output, "w", encoding="utf-8") as f:
+                f.write(output_text)
+            click.echo(f"Results written to {output}")
+        else:
+            click.echo(output_text)
+        
+        logger.info("Process command completed successfully")
+        
+    except FileNotFoundError:
+        logger.error("Data file not found: {}", data_file)
+        click.echo(f"Error: File not found: {data_file}", err=True)
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        logger.error("Invalid JSON in data file: {}", e)
+        click.echo(f"Error: Invalid JSON in {data_file}: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        logger.error("Process command failed: {}", e)
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+@main.command()
+@click.argument("numbers", nargs=-1, type=float, required=True)
+@click.option(
+    "--precision",
+    type=int,
+    default=2,
+    help="Decimal precision for output"
+)
+@click.pass_context
+def stats(
+    ctx: click.Context,
+    numbers: tuple,
+    precision: int
+) -> None:
+    """Calculate statistics for a list of numbers.
+    
+    NUMBERS should be a space-separated list of numeric values.
+    
+    Example:
+        {{ project_slug }} stats 1 2 3 4 5
+    """
+    try:
+        number_list = list(numbers)
+        result = calculate_statistics(number_list)
+        
+        click.echo("Statistics:")
+        click.echo(f"  Count: {result['count']}")
+        click.echo(f"  Mean:  {result['mean']:.{precision}f}")
+        click.echo(f"  Median: {result['median']:.{precision}f}")
+        click.echo(f"  Min:   {result['min']:.{precision}f}")
+        click.echo(f"  Max:   {result['max']:.{precision}f}")
+        
+        logger.info("Stats command completed for {} numbers", len(number_list))
+        
+    except Exception as e:
+        logger.error("Stats command failed: {}", e)
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+@main.command()
+@click.pass_context
+def info(ctx: click.Context) -> None:
+    """Show information about the application."""
+    click.echo(f"{{ project_name }} v{__version__}")
+    click.echo(f"Author: {{ author_name }}")
+    click.echo(f"Description: {{ project_description }}")
+    click.echo()
+    click.echo("Configuration:")
+    click.echo(f"  Verbose level: {ctx.obj.get('verbose', 0)}")
+    click.echo(f"  Log level: {ctx.obj.get('log_level', 'INFO')}")
+    
+    # Show environment info
+    import os
+    debug_mode = os.getenv("DEBUG", "false").lower() == "true"
+    click.echo(f"  Debug mode: {debug_mode}")
+    
+    logger.info("Info command executed")
+
+
+if __name__ == "__main__":
+    main()
+{% else %}"""Command-line interface is not enabled for this project.
+
+To enable CLI functionality, set include_cli=true in your copier configuration
+and regenerate the project.
+"""
+
+def main() -> None:
+    """Placeholder main function when CLI is disabled."""
+    print("CLI functionality is not enabled for this project.")
+    print("To enable, set include_cli=true in your copier configuration.")
+
+
+if __name__ == "__main__":
+    main()
+{% endif %}

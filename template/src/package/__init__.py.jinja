@@ -1,0 +1,18 @@
+"""{{ project_name }} - {{ project_description }}"""
+
+__version__ = "0.1.0"
+__author__ = "{{ author_name }}"
+__email__ = "{{ author_email }}"
+
+# Public API exports
+from {{ package_name }}.core import main_function{% if include_cli %}, process_data{% endif %}
+
+__all__ = [
+    "__version__",
+    "main_function",{% if include_cli %}
+    "process_data",{% endif %}
+]
+
+# Configure logging to be quiet by default when used as a library
+import logging
+logging.getLogger("{{ package_name }}").addHandler(logging.NullHandler())
