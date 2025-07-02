@@ -13,7 +13,7 @@ This guide explains how to use the Python Utility Template to create well-struct
 
 2. **Generate a new project**:
    ```bash
-   copier copy https://github.com/yourusername/python-utility-template my-new-project
+   copier copy https://github.com/rnwolf/copier-py-uv my-new-project
    ```
 
 3. **Follow the prompts** to configure your project

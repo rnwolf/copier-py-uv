@@ -45,7 +45,7 @@ A comprehensive [Copier](https://copier.readthedocs.io/) template for creating w
 
 2. **Generate a new project**:
    ```bash
-   copier copy https://github.com/yourusername/python-utility-template my-new-project
+   copier copy https://github.com/rnwolf/copier-py-uv my-new-project
    ```
 
 3. **Set up the development environment**:
