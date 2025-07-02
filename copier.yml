@@ -136,8 +136,6 @@ keywords:
   default: "utility, tool"
 
 _tasks:
-  - task: "echo"
-    description: "Template generation completed!"
+  - command: "echo 'Template generation completed!'"
   - when: "{{ include_pre_commit }}"
-    task: "echo"
-    description: "Don't forget to run 'pre-commit install' after setting up your environment"
+    command: "echo 'Do not forget to run pre-commit install after setting up your environment'"
