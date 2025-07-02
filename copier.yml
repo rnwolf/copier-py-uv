@@ -2,6 +2,7 @@
 # Optimized for AI-assisted development with Claude Code and similar tools
 
 _templates_suffix: .jinja
+_subdirectory: template
 _envops:
   block_start_string: "{%"
   block_end_string: "%}"
