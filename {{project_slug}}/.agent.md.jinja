@@ -1,0 +1,175 @@
+{% if include_agent_md %}# AI Development Context for {{ project_name }}
+
+This file provides context and instructions for AI coding assistants working on this project.
+
+## Project Overview
+
+**Name**: {{ project_name }}
+**Description**: {{ project_description }}
+**Package**: `{{ package_name }}`
+**Type**: {% if include_cli %}CLI Application{% else %}Python Library{% endif %}
+
+## Project Structure
+
+This project follows the **src layout** pattern for better import handling and testing:
+
+```
+{{ project_slug }}/
+├── src/{{ package_name }}/     # Main package source code
+├── tests/                      # Test suite (mirrors src structure)
+├── docs/                       # Documentation{% if include_docs %} (MkDocs){% endif %}
+├── scripts/                    # Utility scripts
+├── pyproject.toml             # Project configuration
+└── duties.py                  # Task automation
+```
+
+## Development Practices
+
+### Code Style and Quality
+{% if use_ruff %}- **Linting/Formatting**: Ruff (configured in pyproject.toml){% endif %}
+{% if use_pyright %}- **Type Checking**: Pyright with strict mode enabled{% endif %}
+{% if use_pytest %}- **Testing**: pytest with coverage reporting (80% minimum){% endif %}
+{% if include_pre_commit %}- **Pre-commit**: Automated code quality checks{% endif %}
+- **Documentation**: Docstrings for all public functions/classes
+- **Type Hints**: Required for all function signatures
+
+### Testing Strategy
+- **Test-Driven Development (TDD)**: Write tests before implementation
+- **Test Structure**: Mirror the src/ directory structure in tests/
+- **Coverage**: Maintain minimum 80% test coverage
+- **Test Types**: Unit tests, integration tests, and CLI tests
+
+### Key Conventions
+
+1. **Import Style**:
+   ```python
+   # Standard library first
+   import os
+   from pathlib import Path
+   
+   # Third-party packages
+   {% if include_cli %}import click{% endif %}
+   from loguru import logger
+   
+   # Local imports
+   from {{ package_name }}.core import main_function
+   ```
+
+2. **Error Handling**:
+   ```python
+   # Use specific exceptions
+   from {{ package_name }}.exceptions import {{ package_name.title() }}Error
+   
+   # Log errors appropriately
+   logger.error("Descriptive error message: {}", error_details)
+   ```
+
+3. **Type Hints**:
+   ```python
+   from typing import Optional, List, Dict, Any
+   
+   def process_data(
+       data: List[Dict[str, Any]], 
+       options: Optional[Dict[str, str]] = None
+   ) -> Dict[str, Any]:
+       """Process data with optional configuration."""
+   ```
+
+## File-Specific Guidelines
+
+### `src/{{ package_name }}/__init__.py`
+- Export main public API
+- Define `__version__`
+- Keep imports minimal
+
+### `src/{{ package_name }}/core.py`
+- Main business logic
+- Pure functions when possible
+- Comprehensive docstrings
+
+{% if include_cli %}### `src/{{ package_name }}/cli.py`
+- Click-based command-line interface
+- Separate commands into functions
+- Use click.echo() for output
+- Handle errors gracefully{% endif %}
+
+### `src/{{ package_name }}/utils.py`
+- Helper functions
+- Utility classes
+- Common operations
+
+### Test Files
+- One test file per source file
+- Use descriptive test names: `test_function_name_when_condition_then_expected`
+- Use fixtures for common test data
+- Test both success and failure cases
+
+## Development Workflow
+
+1. **Setup**: `uv venv && source .venv/bin/activate && uv pip install -e ".[dev]"`
+2. **Test**: `duty test` or `pytest`
+3. **Lint**: `duty lint` or `ruff check .`
+4. **Format**: `ruff format .`
+5. **Type Check**: `pyright`
+6. **Build**: `duty build`
+
+## Common Tasks
+
+### Adding a New Feature
+1. Write tests first (TDD approach)
+2. Implement the feature
+3. Update documentation
+4. Run full test suite
+5. Update CHANGELOG.md
+
+### Adding Dependencies
+1. Add to `dependencies` in pyproject.toml for runtime deps
+2. Add to `dev` optional-dependencies for development tools
+3. Run `uv pip install -e ".[dev]"` to update environment
+
+### Debugging
+- Use `logger.debug()` for debug information
+- Set `DEBUG=true` in .env for verbose logging
+- Use `pytest -s` to see print statements during tests
+
+## AI Assistant Guidelines
+
+When working on this project:
+
+1. **Always run tests** after making changes
+2. **Follow the existing code style** and patterns
+3. **Add type hints** to all new functions
+4. **Write docstrings** for public APIs
+5. **Update tests** when modifying functionality
+6. **Consider backwards compatibility** when changing public APIs
+7. **Use the project's logging** instead of print statements
+8. **Follow the import conventions** listed above
+
+## Dependencies
+
+**Core Dependencies**:
+{% if include_cli %}- `click`: CLI framework{% endif %}
+- `loguru`: Logging
+
+**Development Dependencies**:
+{% if use_pytest %}- `pytest`: Testing framework{% endif %}
+{% if use_ruff %}- `ruff`: Linting and formatting{% endif %}
+{% if use_pyright %}- `pyright`: Type checking{% endif %}
+- `duty`: Task automation
+
+## Resources
+
+- [Project Repository](https://github.com/{{ github_username }}/{{ project_slug }})
+- [Issue Tracker](https://github.com/{{ github_username }}/{{ project_slug }}/issues)
+{% if include_docs %}- [Documentation](https://{{ github_username }}.github.io/{{ project_slug }}){% endif %}
+- [Python Packaging Guide](https://packaging.python.org/)
+- [uv Documentation](https://github.com/astral-sh/uv)
+
+---
+
+*This file is automatically generated and should be updated when project structure or conventions change.*
+{% else %}# AI Development Context
+
+AI development context is disabled for this project.
+To enable, set include_agent_md=true in your copier configuration.
+{% endif %}

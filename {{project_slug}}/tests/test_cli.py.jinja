@@ -1,0 +1,334 @@
+{% if include_cli %}"""Test command-line interface for {{ project_name }}."""
+
+{% if use_pytest %}import pytest
+import json
+import tempfile
+from pathlib import Path
+from click.testing import CliRunner
+
+from {{ package_name }}.cli import main
+from {{ package_name }} import __version__
+
+
+@pytest.fixture
+def runner():
+    """Provide a Click CLI runner."""
+    return CliRunner()
+
+
+def test_cli_version(runner):
+    """Test that --version flag works."""
+    result = runner.invoke(main, ["--version"])
+    assert result.exit_code == 0
+    assert __version__ in result.output
+
+
+def test_cli_help(runner):
+    """Test that --help flag works."""
+    result = runner.invoke(main, ["--help"])
+    assert result.exit_code == 0
+    assert "{{ project_description }}" in result.output
+    assert "Usage:" in result.output
+
+
+def test_hello_command(runner):
+    """Test the hello command."""
+    result = runner.invoke(main, ["hello"])
+    assert result.exit_code == 0
+    assert "Hello from {{ project_name }}!" in result.output
+
+
+def test_hello_command_with_verbose(runner):
+    """Test hello command with verbose flag."""
+    result = runner.invoke(main, ["-v", "hello"])
+    assert result.exit_code == 0
+    assert "Hello from {{ project_name }}!" in result.output
+
+
+def test_info_command(runner):
+    """Test the info command."""
+    result = runner.invoke(main, ["info"])
+    assert result.exit_code == 0
+    assert "{{ project_name }}" in result.output
+    assert __version__ in result.output
+    assert "{{ author_name }}" in result.output
+
+
+def test_stats_command_basic(runner):
+    """Test stats command with basic numbers."""
+    result = runner.invoke(main, ["stats", "1", "2", "3", "4", "5"])
+    assert result.exit_code == 0
+    assert "Statistics:" in result.output
+    assert "Count: 5" in result.output
+    assert "Mean:" in result.output
+    assert "Median:" in result.output
+
+
+def test_stats_command_single_number(runner):
+    """Test stats command with a single number."""
+    result = runner.invoke(main, ["stats", "42"])
+    assert result.exit_code == 0
+    assert "Count: 1" in result.output
+    assert "Mean:  42.00" in result.output
+    assert "Median: 42.00" in result.output
+
+
+def test_stats_command_precision(runner):
+    """Test stats command with custom precision."""
+    result = runner.invoke(main, ["stats", "--precision", "4", "1.23456", "2.34567"])
+    assert result.exit_code == 0
+    assert ".0000" in result.output or ".2346" in result.output  # Check for 4 decimal places
+
+
+def test_stats_command_no_numbers(runner):
+    """Test stats command with no numbers provided."""
+    result = runner.invoke(main, ["stats"])
+    assert result.exit_code != 0  # Should fail
+    assert "Error" in result.output or "Usage" in result.output
+
+
+def test_stats_command_invalid_number(runner):
+    """Test stats command with invalid number."""
+    result = runner.invoke(main, ["stats", "not_a_number"])
+    assert result.exit_code != 0  # Should fail due to type validation
+
+
+def test_process_command_with_valid_file(runner, temp_json_file):
+    """Test process command with valid JSON file."""
+    result = runner.invoke(main, ["process", str(temp_json_file)])
+    assert result.exit_code == 0
+    
+    # Parse the output as JSON to verify it's valid
+    output_lines = result.output.strip().split('\n')
+    json_output = '\n'.join(output_lines)
+    try:
+        parsed = json.loads(json_output)
+        assert "count" in parsed
+        assert "items" in parsed
+        assert "success" in parsed
+        assert parsed["success"] is True
+    except json.JSONDecodeError:
+        pytest.fail(f"Output is not valid JSON: {json_output}")
+
+
+def test_process_command_with_output_file(runner, temp_json_file, temp_directory):
+    """Test process command with output file."""
+    output_file = temp_directory / "output.json"
+    result = runner.invoke(main, ["process", str(temp_json_file), "-o", str(output_file)])
+    assert result.exit_code == 0
+    assert output_file.exists()
+    
+    # Verify output file contains valid JSON
+    with open(output_file) as f:
+        data = json.load(f)
+        assert "count" in data
+        assert "items" in data
+
+
+def test_process_command_yaml_format(runner, temp_json_file):
+    """Test process command with YAML output format."""
+    result = runner.invoke(main, ["process", str(temp_json_file), "--format", "yaml"])
+    assert result.exit_code == 0
+    # YAML output should contain key-value pairs
+    assert "count:" in result.output
+    assert "items:" in result.output
+
+
+def test_process_command_csv_format(runner, temp_json_file):
+    """Test process command with CSV output format."""
+    result = runner.invoke(main, ["process", str(temp_json_file), "--format", "csv"])
+    assert result.exit_code == 0
+    # CSV output should contain headers
+    assert "id" in result.output or "name" in result.output
+
+
+def test_process_command_no_validate(runner, temp_json_file):
+    """Test process command with validation disabled."""
+    result = runner.invoke(main, ["process", str(temp_json_file), "--no-validate"])
+    assert result.exit_code == 0
+
+
+def test_process_command_nonexistent_file(runner):
+    """Test process command with nonexistent file."""
+    result = runner.invoke(main, ["process", "nonexistent.json"])
+    assert result.exit_code != 0
+    assert "Error" in result.output
+
+
+def test_process_command_invalid_json(runner, temp_directory):
+    """Test process command with invalid JSON file."""
+    invalid_file = temp_directory / "invalid.json"
+    invalid_file.write_text("{ invalid json }")
+    
+    result = runner.invoke(main, ["process", str(invalid_file)])
+    assert result.exit_code != 0
+    assert "Error" in result.output
+
+
+def test_process_command_non_array_json(runner, temp_directory):
+    """Test process command with JSON that's not an array."""
+    non_array_file = temp_directory / "non_array.json"
+    non_array_file.write_text('{"key": "value"}')
+    
+    result = runner.invoke(main, ["process", str(non_array_file)])
+    assert result.exit_code != 0
+    assert "must contain a JSON array" in result.output
+
+
+def test_verbose_levels(runner):
+    """Test different verbosity levels."""
+    # Test single -v
+    result = runner.invoke(main, ["-v", "hello"])
+    assert result.exit_code == 0
+    
+    # Test double -vv
+    result = runner.invoke(main, ["-vv", "hello"])
+    assert result.exit_code == 0
+    
+    # Test triple -vvv
+    result = runner.invoke(main, ["-vvv", "hello"])
+    assert result.exit_code == 0
+
+
+def test_log_file_option(runner, temp_directory):
+    """Test --log-file option."""
+    log_file = temp_directory / "test.log"
+    result = runner.invoke(main, ["--log-file", str(log_file), "hello"])
+    assert result.exit_code == 0
+    # Log file should be created (though it might be empty in tests)
+    assert log_file.exists()
+
+
+def test_env_file_option(runner, temp_env_file):
+    """Test --env-file option."""
+    result = runner.invoke(main, ["--env-file", str(temp_env_file), "info"])
+    assert result.exit_code == 0
+    # Should complete without error when loading env file
+
+
+def test_package_can_be_run_as_module(runner):
+    """Test that the package can be executed as a module."""
+    import subprocess
+    import sys
+    
+    # Run the package as a module
+    result = subprocess.run(
+        [sys.executable, "-m", "{{ package_name }}"],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+    
+    # Should not crash (exit code 0 or help message)
+    assert result.returncode in [0, 2]  # 0 for success, 2 for missing args
+
+
+@pytest.mark.slow
+def test_cli_integration_workflow(runner, temp_directory):
+    """Test a complete CLI workflow."""
+    # Create test data
+    test_data = [
+        {"id": "1", "name": "item1", "value": 10},
+        {"id": "2", "name": "item2", "value": 20},
+    ]
+    
+    input_file = temp_directory / "input.json"
+    output_file = temp_directory / "output.json"
+    
+    with open(input_file, "w") as f:
+        json.dump(test_data, f)
+    
+    # Process the data
+    result = runner.invoke(main, [
+        "process", str(input_file), 
+        "-o", str(output_file),
+        "--format", "json"
+    ])
+    
+    assert result.exit_code == 0
+    assert output_file.exists()
+    
+    # Verify the output
+    with open(output_file) as f:
+        output_data = json.load(f)
+        assert output_data["count"] == 2
+        assert len(output_data["items"]) == 2
+{% else %}import unittest
+import json
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+import subprocess
+import sys
+
+from {{ package_name }}.cli import main
+
+
+class TestCLI(unittest.TestCase):
+    """Test command-line interface."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.temp_path = Path(self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up test fixtures."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def test_main_function_exists(self):
+        """Test that main function exists and is callable."""
+        self.assertTrue(callable(main))
+    
+    def test_package_can_be_run_as_module(self):
+        """Test that the package can be executed as a module."""
+        result = subprocess.run(
+            [sys.executable, "-m", "{{ package_name }}"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        # Should not crash completely
+        self.assertIn(result.returncode, [0, 1, 2])
+
+
+if __name__ == "__main__":
+    unittest.main()
+{% endif %}
+{% else %}"""Command-line interface tests for {{ project_name }}.
+
+CLI functionality is not enabled for this project.
+To enable CLI testing, set include_cli=true in your copier configuration.
+"""
+
+{% if use_pytest %}import pytest
+
+
+def test_cli_not_enabled():
+    """Test that CLI is not enabled."""
+    # This test serves as a placeholder when CLI is disabled
+    assert True, "CLI functionality is not enabled"
+
+
+@pytest.mark.skip(reason="CLI functionality is not enabled")
+def test_cli_placeholder():
+    """Placeholder test for when CLI is enabled."""
+    pass
+{% else %}import unittest
+
+
+class TestCLINotEnabled(unittest.TestCase):
+    """Test that CLI is properly disabled."""
+    
+    def test_cli_not_enabled(self):
+        """Test that CLI is not enabled."""
+        # This test serves as a placeholder when CLI is disabled
+        self.assertTrue(True, "CLI functionality is not enabled")
+
+
+if __name__ == "__main__":
+    unittest.main()
+{% endif %}
+{% endif %}

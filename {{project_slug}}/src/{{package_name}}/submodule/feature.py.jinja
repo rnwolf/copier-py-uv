@@ -1,0 +1,187 @@
+{% if include_submodule %}"""Feature processing module for {{ project_name }}."""
+
+from typing import Any, Dict, List, Optional
+from loguru import logger
+
+
+class FeatureProcessor:
+    """A class for processing feature data.
+    
+    This demonstrates how to organize code into classes within submodules.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        """Initialize the feature processor.
+        
+        Args:
+            config: Optional configuration dictionary
+        """
+        self.config = config or {}
+        self.processed_count = 0
+        logger.debug("FeatureProcessor initialized with config: {}", self.config)
+    
+    def process_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
+        """Process a single feature item.
+        
+        Args:
+            item: Dictionary containing feature data
+            
+        Returns:
+            Processed feature item
+            
+        Raises:
+            ValueError: If item is missing required fields
+        """
+        if "id" not in item:
+            raise ValueError("Feature item must have an 'id' field")
+        
+        # Apply processing logic
+        processed_item = item.copy()
+        processed_item["processed"] = True
+        processed_item["processor_version"] = "1.0"
+        
+        # Apply any configuration-based transformations
+        if self.config.get("uppercase_names", False):
+            if "name" in processed_item:
+                processed_item["name"] = processed_item["name"].upper()
+        
+        if self.config.get("add_timestamp", True):
+            from datetime import datetime
+            processed_item["processed_at"] = datetime.now().isoformat()
+        
+        self.processed_count += 1
+        logger.debug("Processed feature item: {}", processed_item["id"])
+        
+        return processed_item
+    
+    def process_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process a batch of feature items.
+        
+        Args:
+            items: List of feature items to process
+            
+        Returns:
+            List of processed feature items
+        """
+        logger.info("Processing batch of {} items", len(items))
+        
+        processed_items = []
+        for item in items:
+            try:
+                processed_item = self.process_item(item)
+                processed_items.append(processed_item)
+            except ValueError as e:
+                logger.warning("Skipping invalid item: {}", e)
+                continue
+        
+        logger.info("Successfully processed {}/{} items", len(processed_items), len(items))
+        return processed_items
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get processing statistics.
+        
+        Returns:
+            Dictionary containing processing statistics
+        """
+        return {
+            "total_processed": self.processed_count,
+            "config": self.config,
+        }
+
+
+def process_feature_data(
+    data: List[Dict[str, Any]], 
+    config: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """Convenience function to process feature data.
+    
+    Args:
+        data: List of feature items to process
+        config: Optional configuration for processing
+        
+    Returns:
+        Dictionary containing processed items and metadata
+        
+    Example:
+        >>> data = [{"id": "1", "name": "feature1"}]
+        >>> result = process_feature_data(data)
+        >>> print(result["success"])
+        True
+    """
+    processor = FeatureProcessor(config)
+    
+    try:
+        processed_items = processor.process_batch(data)
+        stats = processor.get_stats()
+        
+        return {
+            "success": True,
+            "items": processed_items,
+            "stats": stats,
+            "original_count": len(data),
+            "processed_count": len(processed_items),
+        }
+    
+    except Exception as e:
+        logger.error("Feature processing failed: {}", e)
+        return {
+            "success": False,
+            "error": str(e),
+            "items": [],
+            "stats": processor.get_stats(),
+            "original_count": len(data),
+            "processed_count": 0,
+        }
+
+
+def validate_feature_schema(item: Dict[str, Any]) -> bool:
+    """Validate that a feature item has the required schema.
+    
+    Args:
+        item: Feature item to validate
+        
+    Returns:
+        True if item is valid, False otherwise
+    """
+    required_fields = ["id"]
+    optional_fields = ["name", "description", "value", "metadata"]
+    
+    # Check required fields
+    for field in required_fields:
+        if field not in item:
+            logger.warning("Missing required field '{}' in feature item", field)
+            return False
+    
+    # Check field types
+    if not isinstance(item["id"], str):
+        logger.warning("Field 'id' must be a string")
+        return False
+    
+    # Validate optional fields if present
+    if "name" in item and not isinstance(item["name"], str):
+        logger.warning("Field 'name' must be a string")
+        return False
+    
+    if "value" in item and not isinstance(item["value"], (int, float)):
+        logger.warning("Field 'value' must be numeric")
+        return False
+    
+    logger.debug("Feature item validation passed for id: {}", item["id"])
+    return True
+{% else %}"""Feature processing module placeholder.
+
+This module is not included in the current project configuration.
+To include it, set include_submodule=true in your copier configuration.
+"""
+
+def process_feature_data(*args, **kwargs):
+    """Placeholder function when submodule is not included."""
+    raise NotImplementedError("Submodule functionality is not enabled")
+
+
+class FeatureProcessor:
+    """Placeholder class when submodule is not included."""
+    
+    def __init__(self, *args, **kwargs):
+        raise NotImplementedError("Submodule functionality is not enabled")
+{% endif %}

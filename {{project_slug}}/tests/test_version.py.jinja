@@ -1,0 +1,123 @@
+"""Test version information for {{ project_name }}."""
+
+{% if use_pytest %}import pytest
+import re
+from {{ package_name }} import __version__
+
+
+def test_version_exists():
+    """Test that version is defined."""
+    assert __version__ is not None
+    assert isinstance(__version__, str)
+    assert len(__version__) > 0
+
+
+def test_version_format():
+    """Test that version follows semantic versioning format."""
+    # Should match pattern like "0.1.0", "1.2.3", "2.0.0-alpha.1"
+    version_pattern = r"^\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*)?$"
+    assert re.match(version_pattern, __version__), f"Version '{__version__}' doesn't follow semantic versioning"
+
+
+def test_version_components_are_numeric():
+    """Test that the main version components are numeric."""
+    # Split on '-' to handle pre-release versions
+    main_version = __version__.split('-')[0]
+    major, minor, patch = main_version.split('.')
+    
+    assert major.isdigit(), f"Major version '{major}' is not numeric"
+    assert minor.isdigit(), f"Minor version '{minor}' is not numeric"
+    assert patch.isdigit(), f"Patch version '{patch}' is not numeric"
+
+
+def test_version_is_importable():
+    """Test that version can be imported from package."""
+    from {{ package_name }} import __version__ as imported_version
+    assert imported_version == __version__
+
+
+def test_version_consistency():
+    """Test that version is consistent across different import methods."""
+    # Import version directly from module
+    import {{ package_name }}
+    module_version = {{ package_name }}.__version__
+    
+    # Import version from __init__
+    from {{ package_name }} import __version__ as init_version
+    
+    assert module_version == init_version == __version__
+
+
+@pytest.mark.parametrize("version_part", ["major", "minor", "patch"])
+def test_version_parts_are_valid(version_part):
+    """Test that individual version parts are valid."""
+    main_version = __version__.split('-')[0]
+    major, minor, patch = main_version.split('.')
+    
+    version_parts = {
+        "major": major,
+        "minor": minor,
+        "patch": patch
+    }
+    
+    part_value = version_parts[version_part]
+    
+    # Should be numeric
+    assert part_value.isdigit()
+    
+    # Should be non-negative
+    assert int(part_value) >= 0
+    
+    # Should not have leading zeros (except for "0")
+    if len(part_value) > 1:
+        assert not part_value.startswith('0')
+
+
+def test_development_version():
+    """Test handling of development versions."""
+    if "dev" in __version__ or "alpha" in __version__ or "beta" in __version__:
+        # Development versions should have a pre-release identifier
+        assert '-' in __version__, "Development version should have pre-release identifier"
+    else:
+        # Stable versions should not have pre-release identifiers
+        assert '-' not in __version__, "Stable version should not have pre-release identifier"
+{% else %}import unittest
+import re
+from {{ package_name }} import __version__
+
+
+class TestVersion(unittest.TestCase):
+    """Test version information."""
+    
+    def test_version_exists(self):
+        """Test that version is defined."""
+        self.assertIsNotNone(__version__)
+        self.assertIsInstance(__version__, str)
+        self.assertGreater(len(__version__), 0)
+    
+    def test_version_format(self):
+        """Test that version follows semantic versioning format."""
+        version_pattern = r"^\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*)?$"
+        self.assertIsNotNone(
+            re.match(version_pattern, __version__),
+            f"Version '{__version__}' doesn't follow semantic versioning"
+        )
+    
+    def test_version_components_are_numeric(self):
+        """Test that the main version components are numeric."""
+        main_version = __version__.split('-')[0]
+        major, minor, patch = main_version.split('.')
+        
+        self.assertTrue(major.isdigit(), f"Major version '{major}' is not numeric")
+        self.assertTrue(minor.isdigit(), f"Minor version '{minor}' is not numeric")
+        self.assertTrue(patch.isdigit(), f"Patch version '{patch}' is not numeric")
+    
+    def test_version_is_importable(self):
+        """Test that version can be imported from package."""
+        from {{ package_name }} import __version__ as imported_version
+        self.assertEqual(imported_version, __version__)
+
+
+if __name__ == "__main__":
+    unittest.main()
+{% endif %}

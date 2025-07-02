@@ -1,0 +1,13 @@
+"""Allow {{ package_name }} to be executed as a module with python -m {{ package_name }}."""
+
+{% if include_cli %}from {{ package_name }}.cli import main
+
+if __name__ == "__main__":
+    main()
+{% else %}from {{ package_name }}.core import main_function
+
+if __name__ == "__main__":
+    # Example of running the package as a module
+    result = main_function()
+    print(f"Result: {result}")
+{% endif %}

@@ -1,0 +1,143 @@
+# Copier template configuration for Python utility projects
+# Optimized for AI-assisted development with Claude Code and similar tools
+
+_templates_suffix: .jinja
+_envops:
+  block_start_string: "{%"
+  block_end_string: "%}"
+  variable_start_string: "{{"
+  variable_end_string: "}}"
+  comment_start_string: "{#"
+  comment_end_string: "#}"
+
+# Project metadata
+project_name:
+  type: str
+  help: "What is the human-readable name of your project?"
+  placeholder: "My Awesome Utility"
+
+project_slug:
+  type: str
+  help: "What is the slug (directory name) for your project?"
+  placeholder: "my-awesome-utility"
+  default: "{{ project_name|lower|replace(' ', '-')|replace('_', '-') }}"
+
+package_name:
+  type: str
+  help: "What is the Python package name (must be valid Python identifier)?"
+  placeholder: "my_awesome_utility"
+  default: "{{ project_slug|replace('-', '_') }}"
+
+project_description:
+  type: str
+  help: "Brief description of your project"
+  placeholder: "A utility for doing awesome things"
+
+# Author information
+author_name:
+  type: str
+  help: "Your full name"
+  placeholder: "John Doe"
+
+author_email:
+  type: str
+  help: "Your email address"
+  placeholder: "john.doe@example.com"
+
+github_username:
+  type: str
+  help: "Your GitHub username"
+  placeholder: "johndoe"
+
+# Project configuration
+python_version:
+  type: str
+  help: "Minimum Python version"
+  default: "3.9"
+  choices:
+    - "3.9"
+    - "3.10"
+    - "3.11"
+    - "3.12"
+    - "3.13"
+
+license:
+  type: str
+  help: "Choose a license for your project"
+  default: "MIT"
+  choices:
+    - "MIT"
+    - "Apache-2.0"
+    - "GPL-3.0"
+    - "BSD-3-Clause"
+    - "Unlicense"
+
+# Project features
+include_cli:
+  type: bool
+  help: "Include CLI interface using Click?"
+  default: true
+
+include_docs:
+  type: bool
+  help: "Include documentation setup with MkDocs?"
+  default: true
+
+include_github_actions:
+  type: bool
+  help: "Include GitHub Actions CI/CD workflow?"
+  default: true
+
+include_pre_commit:
+  type: bool
+  help: "Include pre-commit hooks configuration?"
+  default: true
+
+include_submodule:
+  type: bool
+  help: "Include example submodule structure?"
+  default: false
+
+# Development tools
+use_ruff:
+  type: bool
+  help: "Use Ruff for linting and formatting?"
+  default: true
+
+use_pyright:
+  type: bool
+  help: "Use Pyright for type checking?"
+  default: true
+
+use_pytest:
+  type: bool
+  help: "Use pytest for testing?"
+  default: true
+
+# AI development optimization
+include_agent_md:
+  type: bool
+  help: "Include .agent.md files for AI development context?"
+  default: true
+
+development_status:
+  type: str
+  help: "Development status classifier"
+  default: "3 - Alpha"
+  choices:
+    - "3 - Alpha"
+    - "4 - Beta"
+    - "5 - Production/Stable"
+
+# Keywords for PyPI
+keywords:
+  type: str
+  help: "Comma-separated keywords for PyPI (optional)"
+  default: "utility, tool"
+
+_tasks:
+  - task: "echo"
+    description: "Template generation completed!"
+  - when: "{{ include_pre_commit }}"
+    task: "echo"
+    description: "Don't forget to run 'pre-commit install' after setting up your environment"

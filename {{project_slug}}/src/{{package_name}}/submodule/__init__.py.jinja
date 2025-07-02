@@ -1,0 +1,13 @@
+{% if include_submodule %}"""Submodule for {{ project_name }} - demonstrates modular organization."""
+
+from {{ package_name }}.submodule.feature import FeatureProcessor, process_feature_data
+
+__all__ = [
+    "FeatureProcessor",
+    "process_feature_data",
+]
+{% else %}"""Submodule placeholder - not included in this project configuration."""
+
+# This submodule is not included in the current project configuration.
+# To include it, set include_submodule=true in your copier configuration.
+{% endif %}

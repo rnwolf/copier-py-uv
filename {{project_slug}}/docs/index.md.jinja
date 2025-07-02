@@ -1,0 +1,239 @@
+{% if include_docs %}# {{ project_name }}
+
+{{ project_description }}
+
+## Overview
+
+{{ project_name }} is a Python {% if include_cli %}command-line utility{% else %}library{% endif %} designed to {{ project_description.lower() }}. It provides a clean, well-tested API and follows modern Python development practices.
+
+## Features
+
+- ✨ **Modern Python**: Built with Python {{ python_version }}+ and type hints
+- 🧪 **Well Tested**: Comprehensive test suite with {{ "pytest" if use_pytest else "unittest" }}
+- 📦 **Easy Installation**: Available via pip and uv
+{% if include_cli %}- 🖥️ **CLI Interface**: User-friendly command-line interface{% endif %}
+- 🔧 **Developer Friendly**: Extensive documentation and examples
+- 🚀 **Fast**: Optimized for performance
+- 🛡️ **Reliable**: Robust error handling and logging
+
+## Quick Start
+
+### Installation
+
+```bash
+pip install {{ project_slug }}
+# or with uv
+uv add {{ project_slug }}
+```
+
+### Basic Usage
+
+{% if include_cli %}#### Command Line
+
+```bash
+# Get help
+{{ project_slug }} --help
+
+# Run basic command
+{{ project_slug }} hello
+
+# Process data
+{{ project_slug }} process data.json
+
+# Calculate statistics
+{{ project_slug }} stats 1 2 3 4 5
+```
+
+#### Python API
+{% endif %}
+
+```python
+from {{ package_name }} import main_function{% if include_cli %}, process_data{% endif %}
+
+# Basic usage
+result = main_function()
+print(result)  # "Hello from {{ project_name }}!"
+
+{% if include_cli %}# Process data
+data = [
+    {"id": "1", "name": "item1", "value": 10},
+    {"id": "2", "name": "item2", "value": 20},
+]
+
+result = process_data(data)
+print(f"Processed {result['count']} items")
+{% endif %}
+```
+
+## Documentation
+
+- **[API Reference](api.md)** - Complete API documentation
+- **[Examples](examples.md)** - Usage examples and tutorials
+- **[Contributing](contributing.md)** - How to contribute to the project
+- **[Changelog](../CHANGELOG.md)** - Version history
+
+## Key Components
+
+### Core Module (`{{ package_name }}.core`)
+
+The core module contains the main business logic:
+
+- `main_function()` - Primary functionality
+- `calculate_statistics()` - Statistical calculations
+- `validate_input()` - Input validation utilities
+{% if include_cli %}- `process_data()` - Data processing pipeline{% endif %}
+
+{% if include_cli %}### CLI Module (`{{ package_name }}.cli`)
+
+Command-line interface built with Click:
+
+- Multiple commands with rich help text
+- Configurable logging and output formats
+- Error handling and user-friendly messages
+- Support for configuration files
+{% endif %}
+
+### Utilities (`{{ package_name }}.utils`)
+
+Helper functions and utilities:
+
+- Logging configuration
+- File operations
+- Environment variable handling
+- Data transformation utilities
+
+{% if include_submodule %}### Submodules
+
+The project includes modular components:
+
+- `{{ package_name }}.submodule.feature` - Feature processing functionality
+{% endif %}
+
+## Development
+
+This project follows modern Python development practices:
+
+### Tools Used
+
+- **Package Management**: [uv](https://github.com/astral-sh/uv) for fast dependency management
+- **Testing**: [{{ "pytest" if use_pytest else "unittest" }}]({% if use_pytest %}https://pytest.org/{% else %}https://docs.python.org/3/library/unittest.html{% endif %}) for comprehensive testing
+{% if use_ruff %}- **Linting**: [Ruff](https://github.com/astral-sh/ruff) for fast Python linting and formatting{% endif %}
+{% if use_pyright %}- **Type Checking**: [Pyright](https://github.com/microsoft/pyright) for static type analysis{% endif %}
+- **Task Automation**: [duty](https://github.com/pawamoy/duty) for development tasks
+- **Documentation**: [MkDocs](https://www.mkdocs.org/) with Material theme
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/{{ github_username }}/{{ project_slug }}.git
+cd {{ project_slug }}
+
+# Set up development environment
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -e ".[dev{% if include_docs %},docs{% endif %}]"
+
+# Install pre-commit hooks
+{% if include_pre_commit %}pre-commit install{% else %}# Pre-commit not configured{% endif %}
+
+# Run tests
+{% if use_pytest %}pytest{% else %}python -m unittest{% endif %}
+
+# Run all quality checks
+duty check
+```
+
+### Available Tasks
+
+The project uses `duty` for task automation:
+
+```bash
+duty setup          # Set up development environment
+duty test           # Run test suite
+duty lint           # Run linting{% if use_ruff %} (ruff){% endif %}
+duty typecheck      # Run type checking{% if use_pyright %} (pyright){% endif %}
+duty build          # Build package
+duty docs           # Build documentation
+duty publish        # Publish to PyPI
+```
+
+## Architecture
+
+### Project Structure
+
+```
+{{ project_slug }}/
+├── src/{{ package_name }}/     # Source code
+│   ├── __init__.py            # Package initialization
+│   ├── core.py                # Core functionality
+│   ├── cli.py                 # Command-line interface
+│   ├── utils.py               # Utility functions
+│   └── submodule/             # Optional submodules
+├── tests/                     # Test suite
+├── docs/                      # Documentation
+├── scripts/                   # Utility scripts
+└── pyproject.toml            # Project configuration
+```
+
+### Design Principles
+
+1. **Modularity**: Clear separation of concerns
+2. **Testability**: Comprehensive test coverage
+3. **Documentation**: Well-documented APIs
+4. **Type Safety**: Full type hint coverage
+5. **Error Handling**: Robust error handling
+6. **Performance**: Optimized for speed
+7. **Maintainability**: Clean, readable code
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](contributing.md) for details.
+
+### Quick Contribution Steps
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Run the test suite
+6. Submit a pull request
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/{{ github_username }}/{{ project_slug }}/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/{{ github_username }}/{{ project_slug }}/discussions)
+- **Documentation**: This documentation site
+- **Email**: {{ author_email }}
+
+## License
+
+This project is licensed under the {{ license }} License. See [LICENSE.md](../LICENSE.md) for details.
+
+## Acknowledgments
+
+- Built with the [Python Utility Template](https://github.com/yourusername/python-utility-template)
+- Powered by modern Python tooling
+- Inspired by best practices from the Python community
+
+---
+
+*Generated with ❤️ using modern Python development practices*
+{% else %}# Documentation
+
+Documentation is not enabled for this project.
+
+To enable documentation, set `include_docs=true` in your copier configuration and regenerate the project.
+
+## Manual Documentation
+
+You can still create documentation manually by:
+
+1. Installing MkDocs: `pip install mkdocs mkdocs-material`
+2. Creating a `mkdocs.yml` configuration file
+3. Adding markdown files to the `docs/` directory
+4. Running `mkdocs serve` to preview locally
+5. Running `mkdocs build` to generate static files
+
+For more information, see the [MkDocs documentation](https://www.mkdocs.org/).
+{% endif %}

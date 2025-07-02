@@ -1,0 +1,40 @@
+# Template answers for {{ project_name }}
+# This file stores the answers used to generate this project
+# It can be used to update the project when the template changes
+
+_src_path: {{ _copier_conf.src_path }}
+_commit: {{ _copier_conf.vcs_ref }}
+
+# Project metadata
+project_name: {{ project_name }}
+project_slug: {{ project_slug }}
+package_name: {{ package_name }}
+project_description: {{ project_description }}
+
+# Author information
+author_name: {{ author_name }}
+author_email: {{ author_email }}
+github_username: {{ github_username }}
+
+# Project configuration
+python_version: {{ python_version }}
+license: {{ license }}
+
+# Project features
+include_cli: {{ include_cli }}
+include_docs: {{ include_docs }}
+include_github_actions: {{ include_github_actions }}
+include_pre_commit: {{ include_pre_commit }}
+include_submodule: {{ include_submodule }}
+
+# Development tools
+use_ruff: {{ use_ruff }}
+use_pyright: {{ use_pyright }}
+use_pytest: {{ use_pytest }}
+
+# AI development optimization
+include_agent_md: {{ include_agent_md }}
+
+# Additional configuration
+development_status: {{ development_status }}
+keywords: {{ keywords }}

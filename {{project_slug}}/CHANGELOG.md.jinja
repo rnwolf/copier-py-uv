@@ -1,0 +1,38 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Initial project structure
+{% if include_cli %}- Command-line interface{% endif %}
+{% if include_docs %}- Documentation setup with MkDocs{% endif %}
+{% if include_github_actions %}- GitHub Actions CI/CD pipeline{% endif %}
+{% if include_pre_commit %}- Pre-commit hooks for code quality{% endif %}
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0] - {{ "now" | strftime("%Y-%m-%d") }}
+
+### Added
+- Initial release of {{ project_name }}
+- Core functionality implementation
+{% if include_cli %}- CLI interface with Click{% endif %}
+- Comprehensive test suite
+- Development environment setup
+- Quality tools configuration ({% if use_ruff %}Ruff{% endif %}{% if use_ruff and use_pyright %}, {% endif %}{% if use_pyright %}Pyright{% endif %})
+
+[Unreleased]: https://github.com/{{ github_username }}/{{ project_slug }}/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/{{ github_username }}/{{ project_slug }}/releases/tag/v0.1.0

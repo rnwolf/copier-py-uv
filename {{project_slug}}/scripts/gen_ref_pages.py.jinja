@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""Generate reference documentation pages for {{ project_name }}.
+
+This script generates API reference documentation by scanning the source code
+and creating markdown files for each module.
+"""
+
+import ast
+import sys
+from pathlib import Path
+from typing import List, Dict, Any
+
+
+def extract_docstring(node: ast.AST) -> str:
+    """Extract docstring from an AST node."""
+    if (isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.Module)) and
+        node.body and isinstance(node.body[0], ast.Expr) and
+        isinstance(node.body[0].value, ast.Constant) and
+        isinstance(node.body[0].value.value, str)):
+        return node.body[0].value.value
+    return ""
+
+
+def analyze_module(file_path: Path) -> Dict[str, Any]:
+    """Analyze a Python module and extract information."""
+    try:
+        content = file_path.read_text(encoding="utf-8")
+        tree = ast.parse(content)
+    except Exception as e:
+        print(f"Warning: Could not parse {file_path}: {e}")
+        return {}
+    
+    module_info = {
+        "docstring": extract_docstring(tree),
+        "functions": [],
+        "classes": [],
+        "imports": []
+    }
+    
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and not node.name.startswith('_'):
+            func_info = {
+                "name": node.name,
+                "docstring": extract_docstring(node),
+                "args": [arg.arg for arg in node.args.args],
+                "lineno": node.lineno
+            }
+            module_info["functions"].append(func_info)
+        
+        elif isinstance(node, ast.ClassDef) and not node.name.startswith('_'):
+            class_info = {
+                "name": node.name,
+                "docstring": extract_docstring(node),
+                "methods": [],
+                "lineno": node.lineno
+            }
+            
+            for item in node.body:
+                if isinstance(item, ast.FunctionDef) and not item.name.startswith('_'):
+                    method_info = {
+                        "name": item.name,
+                        "docstring": extract_docstring(item),
+                        "args": [arg.arg for arg in item.args.args],
+                        "lineno": item.lineno
+                    }
+                    class_info["methods"].append(method_info)
+            
+            module_info["classes"].append(class_info)
+        
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                module_info["imports"].append(alias.name)
+        
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                for alias in node.names:
+                    module_info["imports"].append(f"{node.module}.{alias.name}")
+    
+    return module_info
+
+
+def generate_module_doc(module_path: Path, module_info: Dict[str, Any]) -> str:
+    """Generate markdown documentation for a module."""
+    relative_path = module_path.relative_to(Path("src"))
+    module_name = str(relative_path.with_suffix("")).replace("/", ".")
+    
+    doc = f"# {module_name}\n\n"
+    
+    if module_info.get("docstring"):
+        doc += f"{module_info['docstring']}\n\n"
+    
+    # Functions
+    if module_info.get("functions"):
+        doc += "## Functions\n\n"
+        for func in module_info["functions"]:
+            doc += f"### {func['name']}\n\n"
+            if func.get("docstring"):
+                doc += f"{func['docstring']}\n\n"
+            
+            args_str = ", ".join(func.get("args", []))
+            doc += f"```python\n{func['name']}({args_str})\n```\n\n"
+    
+    # Classes
+    if module_info.get("classes"):
+        doc += "## Classes\n\n"
+        for cls in module_info["classes"]:
+            doc += f"### {cls['name']}\n\n"
+            if cls.get("docstring"):
+                doc += f"{cls['docstring']}\n\n"
+            
+            if cls.get("methods"):
+                doc += f"#### Methods\n\n"
+                for method in cls["methods"]:
+                    doc += f"##### {method['name']}\n\n"
+                    if method.get("docstring"):
+                        doc += f"{method['docstring']}\n\n"
+                    
+                    args_str = ", ".join(method.get("args", []))
+                    doc += f"```python\n{method['name']}({args_str})\n```\n\n"
+    
+    return doc
+
+
+def main() -> None:
+    """Main function."""
+    src_dir = Path("src")
+    docs_dir = Path("docs")
+    ref_dir = docs_dir / "reference"
+    
+    if not src_dir.exists():
+        print("❌ Source directory not found: src/")
+        sys.exit(1)
+    
+    # Create reference docs directory
+    ref_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Find all Python files
+    python_files = list(src_dir.rglob("*.py"))
+    
+    if not python_files:
+        print("❌ No Python files found in src/")
+        sys.exit(1)
+    
+    print(f"📚 Generating reference documentation for {len(python_files)} files...")
+    
+    generated_files = []
+    
+    for py_file in python_files:
+        # Skip __pycache__ and other non-source files
+        if "__pycache__" in str(py_file) or py_file.name.startswith("."):
+            continue
+        
+        print(f"Processing: {py_file}")
+        
+        # Analyze the module
+        module_info = analyze_module(py_file)
+        
+        if not module_info:
+            continue
+        
+        # Generate documentation
+        doc_content = generate_module_doc(py_file, module_info)
+        
+        # Determine output file path
+        relative_path = py_file.relative_to(src_dir)
+        doc_path = ref_dir / relative_path.with_suffix(".md")
+        
+        # Handle __init__.py files
+        if py_file.name == "__init__.py":
+            doc_path = doc_path.with_name("index.md")
+        
+        # Create directory if needed
+        doc_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Write documentation
+        doc_path.write_text(doc_content, encoding="utf-8")
+        generated_files.append(doc_path)
+        print(f"  → {doc_path}")
+    
+    # Generate index file
+    index_content = f"""# API Reference
+
+This section contains automatically generated API documentation for {{ project_name }}.
+
+## Modules
+
+"""
+    
+    for doc_file in sorted(generated_files):
+        relative_path = doc_file.relative_to(ref_dir)
+        module_name = str(relative_path.with_suffix("")).replace("/", ".")
+        if module_name.endswith(".index"):
+            module_name = module_name[:-6]  # Remove .index
+        
+        index_content += f"- [{module_name}]({relative_path})\n"
+    
+    index_file = ref_dir / "index.md"
+    index_file.write_text(index_content, encoding="utf-8")
+    
+    print(f"\n✅ Generated {len(generated_files)} reference files")
+    print(f"📖 Index file: {index_file}")
+    print("\n💡 To view the documentation:")
+    {% if include_docs %}print("  mkdocs serve"){% else %}print("  # Documentation serving not configured")
+    print("  # Enable with include_docs=true in copier configuration"){% endif %}
+
+
+if __name__ == "__main__":
+    main()

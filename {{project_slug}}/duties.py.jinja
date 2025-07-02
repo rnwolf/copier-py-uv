@@ -1,0 +1,384 @@
+"""Development tasks for {{ project_name }}.
+
+This file defines tasks that can be run with the `duty` command.
+Run `duty --list` to see all available tasks.
+"""
+
+import os
+import sys
+from pathlib import Path
+from typing import Optional
+
+from duty import duty
+
+
+@duty
+def setup(ctx):
+    """Set up the development environment."""
+    ctx.run("uv venv", title="Creating virtual environment")
+    ctx.run("uv pip install -e '.[dev{% if include_docs %},docs{% endif %}]'", title="Installing dependencies")
+    {% if include_pre_commit %}ctx.run("pre-commit install", title="Installing pre-commit hooks"){% endif %}
+    print("✅ Development environment set up successfully!")
+    print("💡 Activate with: source .venv/bin/activate")
+
+
+@duty
+def clean(ctx):
+    """Clean up build artifacts and cache files."""
+    patterns = [
+        "build/",
+        "dist/",
+        "*.egg-info/",
+        "__pycache__/",
+        "*.pyc",
+        "*.pyo",
+        ".pytest_cache/",
+        ".coverage",
+        "htmlcov/",
+        ".mypy_cache/",
+        ".ruff_cache/",
+        "*.log",
+    ]
+    
+    for pattern in patterns:
+        ctx.run(f"rm -rf {pattern}", title=f"Removing {pattern}", nofail=True)
+    
+    print("✅ Cleaned up build artifacts and cache files")
+
+
+{% if use_pytest %}@duty
+def test(ctx, coverage: bool = True, parallel: bool = True, verbose: bool = False):
+    """Run the test suite.
+    
+    Args:
+        coverage: Whether to run with coverage reporting
+        parallel: Whether to run tests in parallel
+        verbose: Whether to run in verbose mode
+    """
+    cmd_parts = ["pytest"]
+    
+    if coverage:
+        cmd_parts.extend(["--cov=src/{{ package_name }}", "--cov-report=term-missing", "--cov-report=html"])
+    
+    if parallel:
+        cmd_parts.append("-n auto")
+    
+    if verbose:
+        cmd_parts.append("-v")
+    
+    cmd = " ".join(cmd_parts)
+    ctx.run(cmd, title="Running tests")
+
+
+@duty
+def test_fast(ctx):
+    """Run tests without coverage or parallel execution."""
+    test(ctx, coverage=False, parallel=False)
+
+
+@duty
+def test_unit(ctx):
+    """Run only unit tests."""
+    ctx.run("pytest -m unit", title="Running unit tests")
+
+
+@duty
+def test_integration(ctx):
+    """Run only integration tests."""
+    ctx.run("pytest -m integration", title="Running integration tests")
+
+
+@duty
+def test_slow(ctx):
+    """Run all tests including slow ones."""
+    ctx.run("pytest -m 'not slow'", title="Running all tests except slow ones")
+    ctx.run("pytest -m slow", title="Running slow tests")
+{% else %}@duty
+def test(ctx):
+    """Run the test suite using unittest."""
+    ctx.run("python -m unittest discover tests", title="Running tests")
+{% endif %}
+
+
+{% if use_ruff %}@duty
+def lint(ctx, fix: bool = False):
+    """Run linting checks.
+    
+    Args:
+        fix: Whether to automatically fix issues
+    """
+    cmd = "ruff check ."
+    if fix:
+        cmd += " --fix"
+    
+    ctx.run(cmd, title="Running linter")
+
+
+@duty
+def format_code(ctx, check: bool = False):
+    """Format code with ruff.
+    
+    Args:
+        check: Whether to check formatting without making changes
+    """
+    cmd = "ruff format ."
+    if check:
+        cmd += " --check"
+    
+    ctx.run(cmd, title="Formatting code")
+{% endif %}
+
+
+{% if use_pyright %}@duty
+def typecheck(ctx):
+    """Run type checking with pyright."""
+    ctx.run("pyright", title="Running type checker")
+{% endif %}
+
+
+@duty
+def check(ctx):
+    """Run all quality checks."""
+    {% if use_ruff %}lint(ctx)
+    format_code(ctx, check=True){% endif %}
+    {% if use_pyright %}typecheck(ctx){% endif %}
+    {% if use_pytest %}test(ctx){% else %}test(ctx){% endif %}
+    print("✅ All quality checks passed!")
+
+
+@duty
+def build(ctx):
+    """Build the package."""
+    clean(ctx)
+    ctx.run("uv build", title="Building package")
+    print("✅ Package built successfully!")
+
+
+@duty
+def build_docs(ctx):
+    """Build documentation."""
+    {% if include_docs %}ctx.run("mkdocs build", title="Building documentation")
+    print("✅ Documentation built successfully!")
+    print("📖 Open docs/site/index.html to view"){% else %}print("📚 Documentation is not configured for this project")
+    print("💡 To enable docs, set include_docs=true in your copier configuration"){% endif %}
+
+
+@duty
+def serve_docs(ctx, port: int = 8000):
+    """Serve documentation locally.
+    
+    Args:
+        port: Port to serve on (default: 8000)
+    """
+    {% if include_docs %}ctx.run(f"mkdocs serve --dev-addr localhost:{port}", title=f"Serving docs on port {port}"){% else %}print("📚 Documentation is not configured for this project")
+    print("💡 To enable docs, set include_docs=true in your copier configuration"){% endif %}
+
+
+def _get_current_version() -> str:
+    """Get the current version from the package."""
+    try:
+        from {{ package_name }} import __version__
+        return __version__
+    except ImportError:
+        return "0.1.0"
+
+
+@duty
+def version(ctx):
+    """Show current version."""
+    current_version = _get_current_version()
+    print(f"Current version: {current_version}")
+
+
+@duty
+def bump_version(ctx, part: str = "patch"):
+    """Bump version using the bump-version script.
+    
+    Args:
+        part: Version part to bump (major, minor, patch)
+    """
+    if part not in ["major", "minor", "patch"]:
+        print("❌ Invalid version part. Use: major, minor, or patch")
+        sys.exit(1)
+    
+    current_version = _get_current_version()
+    print(f"Current version: {current_version}")
+    
+    ctx.run(f"python scripts/bump-version.py {part}", title=f"Bumping {part} version")
+    
+    new_version = _get_current_version()
+    print(f"✅ Version bumped to: {new_version}")
+
+
+@duty
+def publish_test(ctx):
+    """Publish package to Test PyPI."""
+    build(ctx)
+    ctx.run("uv publish --publish-url https://test.pypi.org/legacy/", title="Publishing to Test PyPI")
+    print("✅ Package published to Test PyPI!")
+
+
+@duty(pre=["build"])
+def publish(ctx):
+    """Publish package to PyPI."""
+    current_version = _get_current_version()
+    
+    # Confirm publication
+    response = input(f"Publish version {current_version} to PyPI? [y/N]: ")
+    if response.lower() != 'y':
+        print("❌ Publication cancelled")
+        return
+    
+    ctx.run("uv publish", title="Publishing to PyPI")
+    print("✅ Package published to PyPI!")
+
+
+@duty
+def install_local(ctx):
+    """Install the package locally in development mode."""
+    ctx.run("uv pip install -e .", title="Installing package locally")
+    print("✅ Package installed locally!")
+
+
+@duty
+def uninstall(ctx):
+    """Uninstall the package."""
+    ctx.run("uv pip uninstall {{ project_slug }}", title="Uninstalling package")
+
+
+@duty
+def deps_update(ctx):
+    """Update dependencies."""
+    ctx.run("uv pip install --upgrade pip", title="Updating pip")
+    ctx.run("uv pip install -e '.[dev{% if include_docs %},docs{% endif %}]' --upgrade", title="Updating dependencies")
+    {% if include_pre_commit %}ctx.run("pre-commit autoupdate", title="Updating pre-commit hooks"){% endif %}
+    print("✅ Dependencies updated!")
+
+
+@duty
+def deps_list(ctx):
+    """List installed dependencies."""
+    ctx.run("uv pip list", title="Installed packages")
+
+
+@duty
+def security_check(ctx):
+    """Run security checks on dependencies."""
+    ctx.run("uv pip install safety", title="Installing safety", nofail=True)
+    ctx.run("safety check", title="Running security check")
+
+
+{% if include_cli %}@duty
+def demo(ctx):
+    """Run a demo of the CLI functionality."""
+    print("🎯 Running {{ project_name }} demo...")
+    
+    # Show version
+    ctx.run("{{ project_slug }} --version", title="Showing version")
+    
+    # Show help
+    ctx.run("{{ project_slug }} --help", title="Showing help")
+    
+    # Run hello command
+    ctx.run("{{ project_slug }} hello", title="Running hello command")
+    
+    # Run stats command
+    ctx.run("{{ project_slug }} stats 1 2 3 4 5", title="Running stats command")
+    
+    # Show info
+    ctx.run("{{ project_slug }} info", title="Showing info")
+    
+    print("✅ Demo completed!")
+{% endif %}
+
+
+@duty
+def dev_server(ctx):
+    """Start development server (if applicable)."""
+    print("🚀 Starting development environment...")
+    {% if include_cli %}print("💡 Try running: {{ project_slug }} --help"){% endif %}
+    print("💡 Try running: duty demo")
+    print("💡 Try running: duty test")
+
+
+@duty
+def ci(ctx):
+    """Run CI pipeline locally."""
+    print("🔄 Running CI pipeline...")
+    
+    # Quality checks
+    check(ctx)
+    
+    # Build package
+    build(ctx)
+    
+    {% if include_docs %}# Build docs
+    build_docs(ctx){% endif %}
+    
+    print("✅ CI pipeline completed successfully!")
+
+
+@duty
+def release(ctx, part: str = "patch"):
+    """Create a new release.
+    
+    Args:
+        part: Version part to bump (major, minor, patch)
+    """
+    print("🚀 Creating new release...")
+    
+    # Run CI checks
+    ci(ctx)
+    
+    # Bump version
+    bump_version(ctx, part)
+    
+    # Create git tag
+    new_version = _get_current_version()
+    ctx.run(f"git add .", title="Staging changes")
+    ctx.run(f"git commit -m 'Bump version to {new_version}'", title="Committing version bump")
+    ctx.run(f"git tag v{new_version}", title="Creating git tag")
+    
+    print(f"✅ Release {new_version} created!")
+    print("💡 Push with: git push && git push --tags")
+    print("💡 Publish with: duty publish")
+
+
+@duty
+def help_extended(ctx):
+    """Show extended help with examples."""
+    print("🔧 {{ project_name }} Development Tasks")
+    print("=" * 50)
+    print()
+    print("📋 Common workflows:")
+    print("  duty setup           # Set up development environment")
+    print("  duty test            # Run tests with coverage")
+    print("  duty check           # Run all quality checks")
+    print("  duty build           # Build package")
+    {% if include_docs %}print("  duty serve_docs      # Serve documentation locally"){% endif %}
+    {% if include_cli %}print("  duty demo            # Run CLI demo"){% endif %}
+    print("  duty release patch   # Create patch release")
+    print()
+    print("🧪 Testing:")
+    print("  duty test_fast       # Quick tests without coverage")
+    print("  duty test_unit       # Unit tests only")
+    print("  duty test_integration # Integration tests only")
+    print()
+    print("📦 Publishing:")
+    print("  duty publish_test    # Publish to Test PyPI")
+    print("  duty publish         # Publish to PyPI")
+    print()
+    print("🔍 Quality:")
+    {% if use_ruff %}print("  duty lint --fix      # Fix linting issues")
+    print("  duty format_code     # Format code"){% endif %}
+    {% if use_pyright %}print("  duty typecheck       # Run type checking"){% endif %}
+    print("  duty security_check  # Check for security issues")
+    print()
+    print("For more details, run: duty --list")
+
+
+# Set default task
+@duty(default=True)
+def default(ctx):
+    """Show help by default."""
+    help_extended(ctx)

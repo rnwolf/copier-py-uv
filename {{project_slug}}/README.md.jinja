@@ -1,0 +1,171 @@
+# {{ project_name }}
+
+{{ project_description }}
+
+## Installation
+
+### From PyPI (when published)
+
+```bash
+pip install {{ project_slug }}
+# or with uv
+uv add {{ project_slug }}
+```
+
+### Development Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/{{ github_username }}/{{ project_slug }}.git
+   cd {{ project_slug }}
+   ```
+
+2. Set up the development environment:
+   ```bash
+   uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   uv pip install -e ".[dev]"
+   ```
+
+3. Set up pre-commit hooks:
+   ```bash
+   {% if include_pre_commit %}pre-commit install{% else %}# Pre-commit not configured{% endif %}
+   ```
+
+## Usage
+
+{% if include_cli %}### Command Line Interface
+
+```bash
+# Run the CLI
+{{ project_slug }} --help
+
+# Example usage
+{{ project_slug }} --version
+```
+
+### Python API
+
+```python
+from {{ package_name }} import core
+
+# Example usage
+result = core.main_function()
+print(result)
+```
+{% else %}### Python API
+
+```python
+from {{ package_name }} import core
+
+# Example usage
+result = core.main_function()
+print(result)
+```
+{% endif %}
+
+## Development
+
+This project uses modern Python development tools and practices:
+
+- **Package Management**: [uv](https://github.com/astral-sh/uv) for fast dependency management
+- **Testing**: [pytest](https://pytest.org/) with coverage reporting
+- **Linting**: [Ruff](https://github.com/astral-sh/ruff) for fast Python linting
+- **Type Checking**: [Pyright](https://github.com/microsoft/pyright) for static type analysis
+- **Task Automation**: [duty](https://github.com/pawamoy/duty) for development tasks
+- **Documentation**: [MkDocs](https://www.mkdocs.org/) with Material theme
+
+### Available Tasks
+
+Run development tasks using `duty`:
+
+```bash
+# Run tests
+duty test
+
+# Run linting and formatting
+duty lint
+
+# Build documentation
+{% if include_docs %}duty docs{% else %}# Documentation not configured{% endif %}
+
+# Build package
+duty build
+
+# Run all quality checks
+duty check
+
+# Set up development environment
+duty setup
+```
+
+### Testing
+
+```bash
+# Run all tests
+{% if use_pytest %}pytest{% else %}python -m unittest{% endif %}
+
+# Run tests with coverage
+{% if use_pytest %}pytest --cov{% else %}# Coverage not configured{% endif %}
+
+# Run tests in parallel
+{% if use_pytest %}pytest -n auto{% else %}# Parallel testing not configured{% endif %}
+```
+
+### Code Quality
+
+```bash
+# Format code
+{% if use_ruff %}ruff format .{% else %}# Formatting not configured{% endif %}
+
+# Lint code
+{% if use_ruff %}ruff check .{% else %}# Linting not configured{% endif %}
+
+# Type checking
+{% if use_pyright %}pyright{% else %}# Type checking not configured{% endif %}
+```
+
+## Project Structure
+
+```
+{{ project_slug }}/
+├── src/{{ package_name }}/     # Source code
+├── tests/                      # Test suite
+{% if include_docs %}├── docs/                       # Documentation{% endif %}
+├── scripts/                    # Utility scripts
+└── pyproject.toml             # Project configuration
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run the test suite (`duty test`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Development Guidelines
+
+- Write tests for new functionality
+- Follow the existing code style
+- Update documentation as needed
+- Ensure all tests pass before submitting PR
+
+## License
+
+This project is licensed under the {{ license }} License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this project.
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/{{ github_username }}/{{ project_slug }}/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/{{ github_username }}/{{ project_slug }}/discussions)
+
+---
+
+Generated with ❤️ using the [Python Utility Template](https://github.com/yourusername/python-utility-template)

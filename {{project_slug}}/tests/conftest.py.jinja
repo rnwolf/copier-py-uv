@@ -1,0 +1,185 @@
+"""Shared test configuration and fixtures for {{ project_name }}."""
+
+{% if use_pytest %}import pytest
+import tempfile
+from pathlib import Path
+from typing import Any, Dict, List
+{% if include_cli %}from click.testing import CliRunner{% endif %}
+
+
+@pytest.fixture
+def sample_data() -> List[Dict[str, Any]]:
+    """Provide sample data for testing."""
+    return [
+        {"id": "1", "name": "test_item_1", "value": 42},
+        {"id": "2", "name": "test_item_2", "value": 84},
+        {"id": "3", "name": "test_item_3", "value": 126},
+    ]
+
+
+@pytest.fixture
+def invalid_data() -> List[Dict[str, Any]]:
+    """Provide invalid data for testing error handling."""
+    return [
+        {"name": "missing_id", "value": 1},
+        {"id": "valid", "name": "valid_item", "value": 2},
+        {},  # completely empty
+    ]
+
+
+@pytest.fixture
+def temp_directory():
+    """Provide a temporary directory for testing file operations."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        yield Path(temp_dir)
+
+
+@pytest.fixture
+def temp_file(temp_directory):
+    """Provide a temporary file for testing."""
+    temp_file = temp_directory / "test_file.txt"
+    temp_file.write_text("test content")
+    return temp_file
+
+
+@pytest.fixture
+def temp_json_file(temp_directory, sample_data):
+    """Provide a temporary JSON file with sample data."""
+    import json
+    
+    temp_file = temp_directory / "test_data.json"
+    with open(temp_file, "w") as f:
+        json.dump(sample_data, f)
+    return temp_file
+
+
+@pytest.fixture
+def temp_env_file(temp_directory):
+    """Provide a temporary .env file for testing."""
+    env_file = temp_directory / ".env"
+    env_content = """
+# Test environment file
+DEBUG=true
+LOG_LEVEL=DEBUG
+TEST_VAR=test_value
+API_KEY=fake_api_key
+"""
+    env_file.write_text(env_content.strip())
+    return env_file
+
+
+{% if include_cli %}@pytest.fixture
+def cli_runner():
+    """Provide a Click CLI runner for testing commands."""
+    return CliRunner()
+
+
+@pytest.fixture
+def isolated_cli_runner():
+    """Provide an isolated Click CLI runner with temporary filesystem."""
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        yield runner{% endif %}
+
+
+@pytest.fixture
+def mock_logger(monkeypatch):
+    """Mock the logger to capture log messages during testing."""
+    logged_messages = []
+    
+    def mock_log_function(level):
+        def log_func(message, *args, **kwargs):
+            formatted_message = message.format(*args, **kwargs) if args or kwargs else message
+            logged_messages.append((level, formatted_message))
+        return log_func
+    
+    # Mock different log levels
+    monkeypatch.setattr("loguru.logger.debug", mock_log_function("DEBUG"))
+    monkeypatch.setattr("loguru.logger.info", mock_log_function("INFO"))
+    monkeypatch.setattr("loguru.logger.warning", mock_log_function("WARNING"))
+    monkeypatch.setattr("loguru.logger.error", mock_log_function("ERROR"))
+    
+    return logged_messages
+
+
+@pytest.fixture
+def clean_environment(monkeypatch):
+    """Provide a clean environment for testing."""
+    # Remove test-related environment variables
+    test_vars = ["DEBUG", "LOG_LEVEL", "TEST_VAR", "API_KEY"]
+    for var in test_vars:
+        monkeypatch.delenv(var, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def configure_test_logging():
+    """Configure logging for tests to be less verbose."""
+    from loguru import logger
+    
+    # Remove default handler and add a test-specific one
+    logger.remove()
+    logger.add(
+        lambda msg: None,  # Discard log messages during tests
+        level="CRITICAL"   # Only show critical errors
+    )
+
+
+# Pytest configuration
+def pytest_configure(config):
+    """Configure pytest with custom markers."""
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    )
+    config.addinivalue_line(
+        "markers", "integration: marks tests as integration tests"
+    )
+    config.addinivalue_line(
+        "markers", "unit: marks tests as unit tests"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Automatically mark tests based on their location and name."""
+    for item in items:
+        # Mark slow tests
+        if "slow" in item.nodeid or "integration" in item.nodeid:
+            item.add_marker(pytest.mark.slow)
+        
+        # Mark integration tests
+        if "integration" in item.nodeid or "test_integration" in item.name:
+            item.add_marker(pytest.mark.integration)
+        else:
+            # Default to unit test
+            item.add_marker(pytest.mark.unit)
+{% else %}"""Test configuration for projects without pytest.
+
+This project is configured to use the standard unittest framework.
+To use pytest instead, set use_pytest=true in your copier configuration.
+"""
+
+import unittest
+import tempfile
+from pathlib import Path
+
+
+class BaseTestCase(unittest.TestCase):
+    """Base test case with common utilities."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.temp_path = Path(self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up test fixtures."""
+        import shutil
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+    
+    def get_sample_data(self):
+        """Get sample data for testing."""
+        return [
+            {"id": "1", "name": "test_item_1", "value": 42},
+            {"id": "2", "name": "test_item_2", "value": 84},
+            {"id": "3", "name": "test_item_3", "value": 126},
+        ]
+{% endif %}

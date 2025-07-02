@@ -1,0 +1,392 @@
+{% if include_submodule %}"""Test feature processing functionality for {{ project_name }}."""
+
+{% if use_pytest %}import pytest
+from datetime import datetime
+
+from {{ package_name }}.submodule.feature import (
+    FeatureProcessor,
+    process_feature_data,
+    validate_feature_schema,
+)
+
+
+@pytest.fixture
+def feature_data():
+    """Provide sample feature data for testing."""
+    return [
+        {"id": "feature1", "name": "Test Feature 1", "value": 10},
+        {"id": "feature2", "name": "Test Feature 2", "value": 20},
+        {"id": "feature3", "name": "Test Feature 3", "value": 30},
+    ]
+
+
+@pytest.fixture
+def invalid_feature_data():
+    """Provide invalid feature data for testing."""
+    return [
+        {"name": "Missing ID", "value": 1},
+        {"id": "valid", "name": "Valid Feature", "value": 2},
+        {"id": "no_name", "value": 3},
+        {},  # completely empty
+    ]
+
+
+class TestFeatureProcessor:
+    """Test the FeatureProcessor class."""
+    
+    def test_init_default_config(self):
+        """Test processor initialization with default config."""
+        processor = FeatureProcessor()
+        assert processor.config == {}
+        assert processor.processed_count == 0
+    
+    def test_init_custom_config(self):
+        """Test processor initialization with custom config."""
+        config = {"uppercase_names": True, "add_timestamp": False}
+        processor = FeatureProcessor(config)
+        assert processor.config == config
+        assert processor.processed_count == 0
+    
+    def test_process_item_basic(self):
+        """Test processing a single valid item."""
+        processor = FeatureProcessor()
+        item = {"id": "test1", "name": "Test Item", "value": 42}
+        
+        result = processor.process_item(item)
+        
+        assert result["id"] == "test1"
+        assert result["name"] == "Test Item"
+        assert result["value"] == 42
+        assert result["processed"] is True
+        assert result["processor_version"] == "1.0"
+        assert "processed_at" in result
+        assert processor.processed_count == 1
+    
+    def test_process_item_missing_id(self):
+        """Test processing item without required ID field."""
+        processor = FeatureProcessor()
+        item = {"name": "No ID", "value": 42}
+        
+        with pytest.raises(ValueError, match="Feature item must have an 'id' field"):
+            processor.process_item(item)
+    
+    def test_process_item_uppercase_names(self):
+        """Test processing with uppercase names configuration."""
+        config = {"uppercase_names": True}
+        processor = FeatureProcessor(config)
+        item = {"id": "test1", "name": "lowercase name", "value": 42}
+        
+        result = processor.process_item(item)
+        
+        assert result["name"] == "LOWERCASE NAME"
+    
+    def test_process_item_no_timestamp(self):
+        """Test processing without timestamp addition."""
+        config = {"add_timestamp": False}
+        processor = FeatureProcessor(config)
+        item = {"id": "test1", "name": "Test Item", "value": 42}
+        
+        result = processor.process_item(item)
+        
+        assert "processed_at" not in result
+    
+    def test_process_item_no_name_field(self):
+        """Test processing item without name field (should still work)."""
+        processor = FeatureProcessor()
+        item = {"id": "test1", "value": 42}
+        
+        result = processor.process_item(item)
+        
+        assert result["id"] == "test1"
+        assert result["value"] == 42
+        assert result["processed"] is True
+    
+    def test_process_batch_valid_items(self, feature_data):
+        """Test processing a batch of valid items."""
+        processor = FeatureProcessor()
+        
+        result = processor.process_batch(feature_data)
+        
+        assert len(result) == len(feature_data)
+        assert processor.processed_count == len(feature_data)
+        
+        for item in result:
+            assert item["processed"] is True
+            assert "processed_at" in item
+    
+    def test_process_batch_mixed_validity(self, invalid_feature_data):
+        """Test processing batch with some invalid items."""
+        processor = FeatureProcessor()
+        
+        result = processor.process_batch(invalid_feature_data)
+        
+        # Should only process valid items (those with 'id' field)
+        valid_count = sum(1 for item in invalid_feature_data if "id" in item)
+        assert len(result) == valid_count
+        assert processor.processed_count == valid_count
+    
+    def test_process_batch_empty_list(self):
+        """Test processing empty batch."""
+        processor = FeatureProcessor()
+        
+        result = processor.process_batch([])
+        
+        assert result == []
+        assert processor.processed_count == 0
+    
+    def test_get_stats(self):
+        """Test getting processing statistics."""
+        config = {"test": "value"}
+        processor = FeatureProcessor(config)
+        
+        # Process some items
+        items = [
+            {"id": "1", "name": "Item 1"},
+            {"id": "2", "name": "Item 2"},
+        ]
+        processor.process_batch(items)
+        
+        stats = processor.get_stats()
+        
+        assert stats["total_processed"] == 2
+        assert stats["config"] == config
+
+
+def test_process_feature_data_success(feature_data):
+    """Test successful feature data processing."""
+    result = process_feature_data(feature_data)
+    
+    assert result["success"] is True
+    assert result["original_count"] == len(feature_data)
+    assert result["processed_count"] == len(feature_data)
+    assert len(result["items"]) == len(feature_data)
+    assert "stats" in result
+
+
+def test_process_feature_data_with_config(feature_data):
+    """Test feature data processing with custom config."""
+    config = {"uppercase_names": True, "add_timestamp": False}
+    result = process_feature_data(feature_data, config)
+    
+    assert result["success"] is True
+    assert result["stats"]["config"] == config
+    
+    # Check that config was applied
+    for item in result["items"]:
+        if "name" in item:
+            assert item["name"].isupper()
+        assert "processed_at" not in item
+
+
+def test_process_feature_data_invalid_items(invalid_feature_data):
+    """Test processing with some invalid items."""
+    result = process_feature_data(invalid_feature_data)
+    
+    assert result["success"] is True
+    assert result["original_count"] == len(invalid_feature_data)
+    # Should process fewer items than original due to invalid ones
+    assert result["processed_count"] < result["original_count"]
+
+
+def test_process_feature_data_empty_list():
+    """Test processing empty data list."""
+    result = process_feature_data([])
+    
+    assert result["success"] is True
+    assert result["original_count"] == 0
+    assert result["processed_count"] == 0
+    assert result["items"] == []
+
+
+def test_validate_feature_schema_valid():
+    """Test validation of valid feature items."""
+    valid_items = [
+        {"id": "test1"},
+        {"id": "test2", "name": "Test Item"},
+        {"id": "test3", "name": "Test Item", "description": "Description"},
+        {"id": "test4", "name": "Test Item", "value": 42},
+        {"id": "test5", "name": "Test Item", "value": 3.14, "metadata": {"key": "value"}},
+    ]
+    
+    for item in valid_items:
+        assert validate_feature_schema(item) is True
+
+
+def test_validate_feature_schema_invalid():
+    """Test validation of invalid feature items."""
+    invalid_items = [
+        {},  # Missing required 'id'
+        {"name": "No ID"},  # Missing required 'id'
+        {"id": 123},  # ID is not string
+        {"id": "test", "name": 123},  # Name is not string
+        {"id": "test", "value": "not_numeric"},  # Value is not numeric
+    ]
+    
+    for item in invalid_items:
+        assert validate_feature_schema(item) is False
+
+
+def test_validate_feature_schema_optional_fields():
+    """Test validation with optional fields."""
+    # Valid optional fields
+    item = {"id": "test", "name": "Test", "description": "Desc", "value": 42}
+    assert validate_feature_schema(item) is True
+    
+    # Missing optional fields should still be valid
+    item = {"id": "test"}
+    assert validate_feature_schema(item) is True
+
+
+@pytest.mark.integration
+def test_feature_processing_integration(feature_data):
+    """Test complete feature processing workflow."""
+    # Configure processor
+    config = {
+        "uppercase_names": True,
+        "add_timestamp": True,
+    }
+    
+    # Process data
+    result = process_feature_data(feature_data, config)
+    
+    # Verify results
+    assert result["success"] is True
+    assert len(result["items"]) == len(feature_data)
+    
+    # Verify processing was applied
+    for original, processed in zip(feature_data, result["items"]):
+        assert processed["id"] == original["id"]
+        assert processed["name"] == original["name"].upper()
+        assert processed["processed"] is True
+        assert "processed_at" in processed
+        
+        # Verify timestamp format
+        timestamp = processed["processed_at"]
+        # Should be ISO format timestamp
+        datetime.fromisoformat(timestamp)  # Will raise if invalid
+
+
+@pytest.mark.slow
+def test_feature_processing_large_dataset():
+    """Test processing large dataset."""
+    # Create large dataset
+    large_dataset = [
+        {"id": f"item_{i}", "name": f"Item {i}", "value": i}
+        for i in range(1000)
+    ]
+    
+    result = process_feature_data(large_dataset)
+    
+    assert result["success"] is True
+    assert result["processed_count"] == 1000
+    assert len(result["items"]) == 1000
+{% else %}import unittest
+from datetime import datetime
+
+from {{ package_name }}.submodule.feature import (
+    FeatureProcessor,
+    process_feature_data,
+    validate_feature_schema,
+)
+
+
+class TestFeatureProcessor(unittest.TestCase):
+    """Test the FeatureProcessor class."""
+    
+    def test_init_default_config(self):
+        """Test processor initialization with default config."""
+        processor = FeatureProcessor()
+        self.assertEqual(processor.config, {})
+        self.assertEqual(processor.processed_count, 0)
+    
+    def test_process_item_basic(self):
+        """Test processing a single valid item."""
+        processor = FeatureProcessor()
+        item = {"id": "test1", "name": "Test Item", "value": 42}
+        
+        result = processor.process_item(item)
+        
+        self.assertEqual(result["id"], "test1")
+        self.assertEqual(result["name"], "Test Item")
+        self.assertEqual(result["value"], 42)
+        self.assertTrue(result["processed"])
+        self.assertEqual(result["processor_version"], "1.0")
+        self.assertIn("processed_at", result)
+        self.assertEqual(processor.processed_count, 1)
+    
+    def test_process_item_missing_id(self):
+        """Test processing item without required ID field."""
+        processor = FeatureProcessor()
+        item = {"name": "No ID", "value": 42}
+        
+        with self.assertRaises(ValueError):
+            processor.process_item(item)
+
+
+class TestFeatureProcessing(unittest.TestCase):
+    """Test feature processing functions."""
+    
+    def test_process_feature_data_success(self):
+        """Test successful feature data processing."""
+        feature_data = [
+            {"id": "feature1", "name": "Test Feature 1", "value": 10},
+            {"id": "feature2", "name": "Test Feature 2", "value": 20},
+        ]
+        
+        result = process_feature_data(feature_data)
+        
+        self.assertTrue(result["success"])
+        self.assertEqual(result["original_count"], len(feature_data))
+        self.assertEqual(result["processed_count"], len(feature_data))
+        self.assertEqual(len(result["items"]), len(feature_data))
+        self.assertIn("stats", result)
+    
+    def test_validate_feature_schema_valid(self):
+        """Test validation of valid feature items."""
+        valid_item = {"id": "test1", "name": "Test Item", "value": 42}
+        self.assertTrue(validate_feature_schema(valid_item))
+    
+    def test_validate_feature_schema_invalid(self):
+        """Test validation of invalid feature items."""
+        invalid_item = {"name": "No ID"}  # Missing required 'id'
+        self.assertFalse(validate_feature_schema(invalid_item))
+
+
+if __name__ == "__main__":
+    unittest.main()
+{% endif %}
+{% else %}"""Test feature processing functionality for {{ project_name }}.
+
+Submodule functionality is not enabled for this project.
+To enable submodule testing, set include_submodule=true in your copier configuration.
+"""
+
+{% if use_pytest %}import pytest
+
+
+def test_submodule_not_enabled():
+    """Test that submodule is not enabled."""
+    # This test serves as a placeholder when submodule is disabled
+    assert True, "Submodule functionality is not enabled"
+
+
+@pytest.mark.skip(reason="Submodule functionality is not enabled")
+def test_submodule_placeholder():
+    """Placeholder test for when submodule is enabled."""
+    pass
+{% else %}import unittest
+
+
+class TestSubmoduleNotEnabled(unittest.TestCase):
+    """Test that submodule is properly disabled."""
+    
+    def test_submodule_not_enabled(self):
+        """Test that submodule is not enabled."""
+        # This test serves as a placeholder when submodule is disabled
+        self.assertTrue(True, "Submodule functionality is not enabled")
+
+
+if __name__ == "__main__":
+    unittest.main()
+{% endif %}
+{% endif %}
