@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fixed import sorting in all template files to prevent Ruff I001 errors
+- Properly grouped imports by standard library, third-party, and local modules
+- Added blank lines between import groups for better readability
+
 ## [0.2.0] - 2024-07-03
 
 ### Added
