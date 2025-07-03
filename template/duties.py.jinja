@@ -91,14 +91,14 @@ def test_slow(ctx: context.Context):
     ctx.run("pytest -m 'not slow'", title="Running all tests except slow ones")
     ctx.run("pytest -m slow", title="Running slow tests")
 {% else %}@duty
-def test(ctx):
+def test(ctx: context.Context):
     """Run the test suite using unittest."""
     ctx.run("python -m unittest discover tests", title="Running tests")
 {% endif %}
 
 
 {% if use_ruff %}@duty
-def lint(ctx, fix: bool = False):
+def lint(ctx: context.Context, fix: bool = False):
     """Run linting checks.
 
     Args:
@@ -127,7 +127,7 @@ def format_code(ctx: context.Context, check: bool = False):
 
 
 {% if use_pyright %}@duty
-def typecheck(ctx):
+def typecheck(ctx: context.Context):
     """Run type checking with pyright."""
     ctx.run("pyright", title="Running type checker")
 {% endif %}
@@ -216,7 +216,7 @@ def publish_test(ctx: context.Context):
 
 
 @duty(pre=["build"])
-def publish(ctx):
+def publish(ctx: context.Context):
     """Publish package to PyPI."""
     current_version = _get_current_version()
 
