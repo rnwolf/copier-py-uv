@@ -1,9 +1,10 @@
 """Shared test configuration and fixtures for {{ project_name }}."""
 
-{% if use_pytest %}import pytest
-import tempfile
+{% if use_pytest %}import tempfile
 from pathlib import Path
 from typing import Any
+
+import pytest
 {% if include_cli %}from click.testing import CliRunner{% endif %}
 
 

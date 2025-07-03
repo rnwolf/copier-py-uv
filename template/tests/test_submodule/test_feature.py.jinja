@@ -1,7 +1,8 @@
 {% if include_submodule %}"""Test feature processing functionality for {{ project_name }}."""
 
-{% if use_pytest %}import pytest
-from datetime import datetime
+{% if use_pytest %}from datetime import datetime
+
+import pytest
 
 from {{ package_name }}.submodule.feature import (
     FeatureProcessor,

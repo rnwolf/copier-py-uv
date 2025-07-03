@@ -1,7 +1,9 @@
 """Test version information for {{ project_name }}."""
 
-{% if use_pytest %}import pytest
-import re
+{% if use_pytest %}import re
+
+import pytest
+
 from {{ package_name }} import __version__
 
 
@@ -81,8 +83,9 @@ def test_development_version():
     else:
         # Stable versions should not have pre-release identifiers
         assert '-' not in __version__, "Stable version should not have pre-release identifier"
-{% else %}import unittest
-import re
+{% else %}import re
+import unittest
+
 from {{ package_name }} import __version__
 
 

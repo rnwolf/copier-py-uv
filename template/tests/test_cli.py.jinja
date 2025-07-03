@@ -1,13 +1,14 @@
 {% if include_cli %}"""Test command-line interface for {{ project_name }}."""
 
-{% if use_pytest %}import pytest
-import json
+{% if use_pytest %}import json
 import tempfile
 from pathlib import Path
+
+import pytest
 from click.testing import CliRunner
 
-from {{ package_name }}.cli import main
 from {{ package_name }} import __version__
+from {{ package_name }}.cli import main
 
 
 @pytest.fixture
