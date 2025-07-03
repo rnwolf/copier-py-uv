@@ -7,12 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Updated README.md with information on how to do a release of this template
+
+## [0.2.1] - 2024-07-03
+
 ### Fixed
 - Fixed import sorting in all template files to prevent Ruff I001 errors
 - Properly grouped imports by standard library, third-party, and local modules
 - Added blank lines between import groups for better readability
 - Added additional tips to the templated agents document
-- Fixed a a number of Ruff related issues such as sorted imports and end of file newlines.
+- Fixed a number of Ruff related issues such as sorted imports and end of file newlines
 
 ## [0.2.0] - 2024-07-03
 
@@ -61,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example submodule structure
 - AI development context with .agent.md files
 
-[Unreleased]: https://github.com/yourusername/copier-py-uv/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/yourusername/copier-py-uv/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/yourusername/copier-py-uv/releases/tag/v0.1.0
+[Unreleased]: https://github.com/rnwolf/copier-py-uv/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/rnwolf/copier-py-uv/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/rnwolf/copier-py-uv/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/rnwolf/copier-py-uv/releases/tag/v0.1.0

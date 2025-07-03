@@ -45,7 +45,7 @@ A comprehensive [Copier](https://copier.readthedocs.io/) template for creating w
 
 2. **Generate a new project**:
    ```bash
-   copier copy https://github.com/rnwolf/copier-py-uv my-new-project
+   copier copy --trust https://github.com/rnwolf/copier-py-uv my-new-project
    ```
 
 3. **Set up the development environment**:
@@ -58,8 +58,7 @@ A comprehensive [Copier](https://copier.readthedocs.io/) template for creating w
 
 4. **Initialize development tools**:
    ```bash
-   pre-commit install
-   duty setup
+   uv run duty setup
    ```
 
 ## Template Structure
@@ -233,6 +232,60 @@ Generated projects include these `duty` tasks:
 - Python 3.13+
 - [uv](https://github.com/astral-sh/uv) for dependency management
 - [Copier](https://copier.readthedocs.io/) for template generation
+
+## Manual Release Process
+
+1. Check Repository Status
+
+`git status`
+
+2. Update CHANGELOG.md
+
+   2.1. Move changes from "Unreleased" section to a new version section:
+
+   2.2. Update the links at the bottom of the file:
+
+     [Unreleased]: https://github.com/rnwolf/copier-py-uv/compare/v0.2.1...HEAD
+     [0.2.1]: https://github.com/rnwolf/copier-py-uv/compare/v0.2.0...v0.2.1
+
+3. Commit the Changes
+
+   `git commit -m "Release v0.2.1: Fix import sorting and Ruff issues
+
+   - Fixed import sorting in all template files to prevent Ruff I001 errors
+   - Added blank lines between import groups for better readability"`
+
+4. Create a Tag for the Release
+
+   `git tag -a v0.2.1 -m "Release v0.2.1: Fix import sorting and Ruff issues"`
+
+   The -a flag creates an annotated tag with a message.
+
+5. Push Changes to GitHub
+
+   `git push origin main`
+
+6. Push the Tag to GitHub
+
+   `git push origin v0.2.1`
+
+7. Verify the Release
+
+   Go to your GitHub repository and check:
+
+      - The tag appears under "Releases" section
+      - The CHANGELOG.md is updated correctly
+      - All changes are included in the release
+
+Tips:
+
+   - Always update the CHANGELOG.md before creating a new release
+   - Use semantic versioning (MAJOR.MINOR.PATCH):
+      - MAJOR: Breaking changes
+      - MINOR: New features, no breaking changes
+      - PATCH: Bug fixes, no new features or breaking changes
+   - Include a detailed commit message that summarizes the changes
+   - Create an annotated tag with a descriptive message
 
 ## Contributing
 
