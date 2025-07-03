@@ -66,12 +66,12 @@ This project follows the **src layout** pattern for better import handling and t
 
 3. **Type Hints**:
    ```python
-   from typing import Optional, List, Dict, Any
+   from typing import Any
 
    def process_data(
-       data: List[Dict[str, Any]],
-       options: Optional[Dict[str, str]] = None
-   ) -> Dict[str, Any]:
+       data: list[dict[str, Any]],
+       options: dict[str, str] | None = None
+   ) -> dict[str, Any]:
        """Process data with optional configuration."""
    ```
 

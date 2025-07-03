@@ -86,7 +86,7 @@ copier-py-uv/
 The template will prompt you for various configuration options:
 
 - **Project Information**: Name, description, author details
-- **Python Version**: Minimum Python version (3.9-3.13)
+- **Python Version**: Minimum Python version (3.12-3.13)
 - **License**: MIT, Apache-2.0, GPL-3.0, BSD-3-Clause, or Unlicense
 - **Features**: CLI interface, documentation, GitHub Actions, etc.
 - **Development Tools**: Ruff, Pyright, pytest configuration

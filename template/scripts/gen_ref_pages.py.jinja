@@ -8,7 +8,7 @@ and creating markdown files for each module.
 import ast
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
 
 
 def extract_docstring(node: ast.AST) -> str:
@@ -21,7 +21,7 @@ def extract_docstring(node: ast.AST) -> str:
     return ""
 
 
-def analyze_module(file_path: Path) -> Dict[str, Any]:
+def analyze_module(file_path: Path) -> dict[str, Any]:
     """Analyze a Python module and extract information."""
     try:
         content = file_path.read_text(encoding="utf-8")
@@ -79,7 +79,7 @@ def analyze_module(file_path: Path) -> Dict[str, Any]:
     return module_info
 
 
-def generate_module_doc(module_path: Path, module_info: Dict[str, Any]) -> str:
+def generate_module_doc(module_path: Path, module_info: dict[str, Any]) -> str:
     """Generate markdown documentation for a module."""
     relative_path = module_path.relative_to(Path("src"))
     module_name = str(relative_path.with_suffix("")).replace("/", ".")
@@ -109,7 +109,7 @@ def generate_module_doc(module_path: Path, module_info: Dict[str, Any]) -> str:
                 doc += f"{cls['docstring']}\n\n"
 
             if cls.get("methods"):
-                doc += f"#### Methods\n\n"
+                doc += "#### Methods\n\n"
                 for method in cls["methods"]:
                     doc += f"##### {method['name']}\n\n"
                     if method.get("docstring"):
@@ -178,7 +178,7 @@ def main() -> None:
         print(f"  → {doc_path}")
 
     # Generate index file
-    index_content = f"""# API Reference
+    index_content = """# API Reference
 
 This section contains automatically generated API documentation for {{ project_name }}.
 

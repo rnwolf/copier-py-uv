@@ -335,7 +335,7 @@ def release(ctx, part: str = "patch"):
 
     # Create git tag
     new_version = _get_current_version()
-    ctx.run(f"git add .", title="Staging changes")
+    ctx.run("git add .", title="Staging changes")
     ctx.run(f"git commit -m 'Bump version to {new_version}'", title="Committing version bump")
     ctx.run(f"git tag v{new_version}", title="Creating git tag")
 

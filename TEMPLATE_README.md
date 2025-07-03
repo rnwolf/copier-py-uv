@@ -39,7 +39,7 @@ This guide explains how to use the Python Utility Template to create well-struct
 - **github_username**: Your GitHub username
 
 ### Technical Configuration
-- **python_version**: Minimum Python version (3.9-3.13)
+- **python_version**: Minimum Python version (3.13)
 - **license**: Project license (MIT, Apache-2.0, GPL-3.0, BSD-3-Clause, Unlicense)
 
 ### Feature Toggles

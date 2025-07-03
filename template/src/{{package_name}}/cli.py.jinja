@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import click
 from loguru import logger
@@ -33,8 +33,8 @@ from {{ package_name }}.utils import configure_logging, load_environment_variabl
 def main(
     ctx: click.Context,
     verbose: int,
-    log_file: Optional[str],
-    env_file: Optional[str]
+    log_file: str | None,
+    env_file: str | None
 ) -> None:
     """{{ project_description }}
 
@@ -103,7 +103,7 @@ def process(
     data_file: str,
     output_format: str,
     validate: bool,
-    output: Optional[str]
+    output: str | None
 ) -> None:
     """Process data from a file.
 
@@ -218,8 +218,8 @@ def stats(
 def info(ctx: click.Context) -> None:
     """Show information about the application."""
     click.echo(f"{{ project_name }} v{__version__}")
-    click.echo(f"Author: {{ author_name }}")
-    click.echo(f"Description: {{ project_description }}")
+    click.echo("Author: {{ author_name }}")
+    click.echo("Description: {{ project_description }}")
     click.echo()
     click.echo("Configuration:")
     click.echo(f"  Verbose level: {ctx.obj.get('verbose', 0)}")

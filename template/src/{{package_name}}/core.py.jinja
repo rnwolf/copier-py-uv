@@ -1,6 +1,6 @@
 """Core functionality for {{ project_name }}."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 from loguru import logger
 
 
@@ -21,9 +21,9 @@ def main_function() -> str:
 
 
 {% if include_cli %}def process_data(
-    data: List[Dict[str, Any]],
-    options: Optional[Dict[str, str]] = None
-) -> Dict[str, Any]:
+    data: list[dict[str, Any]],
+    options: dict[str, str] | None = None
+) -> dict[str, Any]:
     """Process a list of data dictionaries with optional configuration.
 
     Args:
@@ -71,7 +71,7 @@ def main_function() -> str:
     return result
 
 
-{% endif %}def calculate_statistics(numbers: List[float]) -> Dict[str, float]:
+{% endif %}def calculate_statistics(numbers: list[float]) -> dict[str, float]:
     """Calculate basic statistics for a list of numbers.
 
     Args:

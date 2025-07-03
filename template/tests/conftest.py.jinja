@@ -3,12 +3,12 @@
 {% if use_pytest %}import pytest
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 {% if include_cli %}from click.testing import CliRunner{% endif %}
 
 
 @pytest.fixture
-def sample_data() -> List[Dict[str, Any]]:
+def sample_data() -> list[dict[str, Any]]:
     """Provide sample data for testing."""
     return [
         {"id": "1", "name": "test_item_1", "value": 42},
@@ -18,7 +18,7 @@ def sample_data() -> List[Dict[str, Any]]:
 
 
 @pytest.fixture
-def invalid_data() -> List[Dict[str, Any]]:
+def invalid_data() -> list[dict[str, Any]]:
     """Provide invalid data for testing error handling."""
     return [
         {"name": "missing_id", "value": 1},

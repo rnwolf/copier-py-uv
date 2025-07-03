@@ -61,7 +61,7 @@ version = "0.1.0"
 description = "A brief description of the package"
 readme = "README.md"
 license = {file = "LICENSE.md"}
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 authors = [
     {name = "Your Name", email = "your.email@example.com"},
 ]
@@ -448,16 +448,16 @@ def setup_dev(ctx):
 def run_tests(ctx, coverage: bool = True, parallel: bool = True, verbose: bool = False):
     """Run the test suite with optional coverage and parallel execution."""
     cmd = ["uv", "run", "pytest"]
-    
+
     if coverage:
         cmd.extend(["--cov=src/my_package", "--cov-report=term-missing", "--cov-report=html"])
-    
+
     if parallel:
         cmd.extend(["-n", "auto"])
-    
+
     if verbose:
         cmd.append("-v")
-    
+
     ctx.run(cmd, title="Running tests")
 
 
@@ -466,13 +466,13 @@ def check_quality(ctx, fix: bool = False):
     """Check code quality with ruff and pyright."""
     # Format code
     ctx.run(["uv", "run", "ruff", "format", "."], title="Formatting code with ruff")
-    
+
     # Check linting
     check_cmd = ["uv", "run", "ruff", "check", "."]
     if fix:
         check_cmd.append("--fix")
     ctx.run(check_cmd, title="Checking code quality with ruff")
-    
+
     # Type checking
     ctx.run(["uv", "run", "pyright"], title="Type checking with pyright")
 
@@ -491,7 +491,7 @@ def clean_artifacts(ctx):
         "build/", "dist/", "*.egg-info/", ".coverage*", ".pytest_cache/",
         ".mypy_cache/", ".ruff_cache/", "htmlcov/", "__pycache__/", "*.pyc", "*.pyo"
     ]
-    
+
     for pattern in patterns:
         if pattern.endswith("/"):
             # Directory patterns
@@ -533,14 +533,14 @@ def deploy_docs(ctx):
 def bump_version(ctx, version_type: str):
     """
     Bump version number.
-    
+
     Args:
         version_type: Type of version bump (major, minor, patch)
     """
     if version_type not in ["major", "minor", "patch"]:
         print("❌ Error: version_type must be one of: major, minor, patch")
         sys.exit(1)
-    
+
     ctx.run(
         ["python", "scripts/bump-version.py", version_type],
         title=f"Bumping {version_type} version"
@@ -559,12 +559,12 @@ def _get_current_version():
     pyproject_path = Path("pyproject.toml")
     if not pyproject_path.exists():
         raise FileNotFoundError("pyproject.toml not found")
-    
+
     content = pyproject_path.read_text()
     match = re.search(r'version = "([^"]+)"', content)
     if not match:
         raise ValueError("Version not found in pyproject.toml")
-    
+
     return match.group(1)
 
 
@@ -572,12 +572,12 @@ def _update_changelog(version: str, summary: str):
     """Update CHANGELOG.md with new version entry."""
     if not Path("CHANGELOG.md").exists():
         raise FileNotFoundError("CHANGELOG.md not found")
-    
+
     date = datetime.now().strftime("%Y-%m-%d")
-    
+
     # Read current changelog
     changelog_content = Path("CHANGELOG.md").read_text()
-    
+
     # Insert new version section after [Unreleased]
     new_section = f"""## [Unreleased]
 
@@ -599,7 +599,7 @@ def _update_changelog(version: str, summary: str):
 - {summary}
 
 """
-    
+
     # Replace the Unreleased section
     updated_content = re.sub(
         r"## \[Unreleased\].*?(?=## \[|\Z)",
@@ -607,7 +607,7 @@ def _update_changelog(version: str, summary: str):
         changelog_content,
         flags=re.DOTALL
     )
-    
+
     Path("CHANGELOG.md").write_text(updated_content)
     print(f"✅ Updated CHANGELOG.md with version {version}")
 
@@ -617,40 +617,40 @@ def publish_test(ctx):
     """Publish package to Test PyPI."""
     current_version = _get_current_version()
     print(f"📦 Current version: {current_version}")
-    
+
     # Prompt for changelog entry
     summary = input("📝 Enter a brief summary of changes: ").strip()
     if not summary:
         print("❌ Change summary is required")
         sys.exit(1)
-    
+
     # Update changelog
     _update_changelog(current_version, summary)
-    
+
     # Check if we're in a clean git state
     git_status = ctx.run(["git", "status", "--porcelain"], title="Checking git status")
     if git_status.strip():
         print("⚠️  You have uncommitted changes. Please commit them first.")
         sys.exit(1)
-    
+
     # Build documentation
     try:
         build_docs.run(ctx)
     except Exception:
         print("⚠️  Documentation build failed, continuing anyway")
-    
+
     # Publish to Test PyPI
     ctx.run(["uv", "publish", "--index", "testpypi"], title="Publishing to Test PyPI")
-    
+
     # Commit changelog update
     ctx.run(["git", "add", "CHANGELOG.md"], title="Staging CHANGELOG.md")
     ctx.run(["git", "commit", "-m", f"Update CHANGELOG.md for v{current_version}"], title="Committing changelog")
-    
+
     # Create and push git tag
     ctx.run(["git", "tag", f"v{current_version}"], title=f"Creating tag v{current_version}")
     ctx.run(["git", "push", "origin", f"v{current_version}"], title="Pushing tag")
     ctx.run(["git", "push"], title="Pushing commits")
-    
+
     print("🎉 Successfully published to Test PyPI!")
     print(f"🧪 Test installation: pip install --index-url https://test.pypi.org/simple/ my-package")
 
@@ -660,7 +660,7 @@ def publish_prod(ctx):
     """Publish package to production PyPI."""
     current_version = _get_current_version()
     print(f"📦 Current version: {current_version}")
-    
+
     # Check if we're on main/master branch
     current_branch = ctx.run(["git", "branch", "--show-current"]).strip()
     if current_branch not in ["main", "master"]:
@@ -668,22 +668,22 @@ def publish_prod(ctx):
         confirm = input("Continue anyway? (y/N): ").lower()
         if confirm != "y":
             sys.exit(1)
-    
+
     # Prompt for changelog entry
     summary = input("📝 Enter a brief summary of changes: ").strip()
     if not summary:
         print("❌ Change summary is required")
         sys.exit(1)
-    
+
     # Update changelog
     _update_changelog(current_version, summary)
-    
+
     # Check if we're in a clean git state
     git_status = ctx.run(["git", "status", "--porcelain"], title="Checking git status")
     if git_status.strip():
         print("⚠️  You have uncommitted changes. Please commit them first.")
         sys.exit(1)
-    
+
     # Check if tag already exists
     try:
         ctx.run(["git", "tag", "-l", f"v{current_version}"], title="Checking for existing tag")
@@ -693,32 +693,32 @@ def publish_prod(ctx):
             sys.exit(1)
     except Exception:
         pass
-    
+
     # Build documentation
     try:
         build_docs.run(ctx)
     except Exception:
         print("⚠️  Documentation build failed, continuing anyway")
-    
+
     # Final confirmation
     print(f"🚨 Ready to publish v{current_version} to production PyPI")
     confirm = input("Continue with publication? (y/N): ").lower()
     if confirm != "y":
         print("📦 Publication cancelled")
         sys.exit(0)
-    
+
     # Publish to PyPI
     ctx.run(["uv", "publish"], title="Publishing to PyPI")
-    
+
     # Commit changelog update
     ctx.run(["git", "add", "CHANGELOG.md"], title="Staging CHANGELOG.md")
     ctx.run(["git", "commit", "-m", f"Update CHANGELOG.md for v{current_version}"], title="Committing changelog")
-    
+
     # Create and push git tag
     ctx.run(["git", "tag", f"v{current_version}"], title=f"Creating tag v{current_version}")
     ctx.run(["git", "push", "origin", f"v{current_version}"], title="Pushing tag")
     ctx.run(["git", "push"], title="Pushing commits")
-    
+
     print("🎉 Successfully published to PyPI!")
     print(f"📦 Installation: pip install my-package")
 
@@ -737,24 +737,24 @@ configure_logging(level="TRACE")
 def debug_fibonacci():
     # Set breakpoint before function call
     pdb.set_trace()
-    
+
     # Test with the provided value
     print(f"Calculating fibonacci({n})")
     result = calculate_fibonacci({n})
     print(f"fibonacci({n}) = {{result}}")
-    
+
     # Another breakpoint to inspect results
     pdb.set_trace()
 
 if __name__ == "__main__":
     debug_fibonacci()
 """
-    
+
     # Write debug script to temporary file
     with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
         f.write(debug_script)
         temp_file = f.name
-    
+
     try:
         ctx.run(["uv", "run", "python", temp_file], title=f"Debugging fibonacci({n})")
     finally:
@@ -1135,10 +1135,10 @@ def test_version_is_valid_semver():
     """Test that version follows semantic versioning."""
     # SemVer regex pattern
     semver_pattern = r"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
-    
+
     # Allow development versions
     dev_pattern = r"^\d+\.\d+\.\d+-dev$"
-    
+
     assert re.match(semver_pattern, __version__) or re.match(dev_pattern, __version__), \
         f"Version '{__version__}' does not follow semantic versioning"
 
@@ -1148,26 +1148,26 @@ def test_version_matches_pyproject_toml():
     # Skip this test in development mode
     if __version__.endswith("-dev"):
         pytest.skip("Skipping version check in development mode")
-    
+
     # Find pyproject.toml (go up from tests directory)
     current_dir = Path(__file__).parent
     pyproject_path = None
-    
+
     # Search up the directory tree for pyproject.toml
     for parent in [current_dir] + list(current_dir.parents):
         potential_path = parent / "pyproject.toml"
         if potential_path.exists():
             pyproject_path = potential_path
             break
-    
+
     assert pyproject_path is not None, "Could not find pyproject.toml"
-    
+
     # Read version from pyproject.toml
     with open(pyproject_path, "rb") as f:
         pyproject_data = tomllib.load(f)
-    
+
     pyproject_version = pyproject_data["project"]["version"]
-    
+
     assert __version__ == pyproject_version, \
         f"Version mismatch: __version__='{__version__}' vs pyproject.toml='{pyproject_version}'"
 
@@ -1199,10 +1199,10 @@ def test_version_components_are_numeric():
     else:
         # Remove pre-release and build metadata for testing
         version_base = __version__.split("-")[0].split("+")[0]
-    
+
     parts = version_base.split(".")
     assert len(parts) == 3, f"Version should have 3 parts, got {len(parts)}: {parts}"
-    
+
     for i, part in enumerate(parts):
         assert part.isdigit(), f"Version part {i} should be numeric: '{part}'"
         assert int(part) >= 0, f"Version part {i} should be non-negative: {part}"
@@ -1231,7 +1231,7 @@ def test_cli_version_option(runner):
     """Test that --version flag works and shows correct version."""
     result = runner.invoke(cli, ["--version"])
     assert result.exit_code == 0
-    
+
     # Check that version is displayed
     version_pattern = rf"my-package, version {re.escape(__version__)}"
     assert re.search(version_pattern, result.output), \
@@ -1281,7 +1281,7 @@ def test_package_can_be_run_as_module(runner):
     """Test that package can be run with python -m my_package --version."""
     import subprocess
     import sys
-    
+
     # Run the package as a module
     result = subprocess.run(
         [sys.executable, "-m", "my_package", "--version"],
@@ -1289,9 +1289,9 @@ def test_package_can_be_run_as_module(runner):
         text=True,
         timeout=10
     )
-    
+
     assert result.returncode == 0, f"Command failed with stderr: {result.stderr}"
-    
+
     # Check that version is displayed
     version_pattern = rf"my-package, version {re.escape(__version__)}"
     assert re.search(version_pattern, result.stdout), \
@@ -1361,10 +1361,10 @@ def debug_fibonacci():
     """Debug the fibonacci function with breakpoints."""
     # Set breakpoint before function call
     pdb.set_trace()
-    
+
     # Test with different values
     test_values = [5, 10, 15]
-    
+
     for n in test_values:
         print(f"Calculating fibonacci({n})")
         result = calculate_fibonacci(n)
@@ -1424,7 +1424,7 @@ uv run duty bump-version patch          # or minor, major
 python scripts/bump-version.py --dry-run minor  # preview changes (still using script)
 
 # Publishing using Duty
-uv run duty publish-test                # Test PyPI first  
+uv run duty publish-test                # Test PyPI first
 uv run duty publish-prod                # Production PyPI
 
 # Documentation using Duty
@@ -1471,12 +1471,12 @@ def get_current_version():
     pyproject_path = Path("pyproject.toml")
     if not pyproject_path.exists():
         raise FileNotFoundError("pyproject.toml not found")
-    
+
     content = pyproject_path.read_text()
     match = re.search(r'version = "([^"]+)"', content)
     if not match:
         raise ValueError("Version not found in pyproject.toml")
-    
+
     return match.group(1)
 
 
@@ -1485,7 +1485,7 @@ def parse_version(version_str):
     parts = version_str.split(".")
     if len(parts) != 3:
         raise ValueError(f"Invalid version format: {version_str}")
-    
+
     try:
         return tuple(int(part) for part in parts)
     except ValueError:
@@ -1495,7 +1495,7 @@ def parse_version(version_str):
 def bump_version(current_version, bump_type):
     """Bump version based on type."""
     major, minor, patch = parse_version(current_version)
-    
+
     if bump_type == "major":
         return f"{major + 1}.0.0"
     elif bump_type == "minor":
@@ -1510,7 +1510,7 @@ def update_version_in_file(new_version):
     """Update version in pyproject.toml."""
     pyproject_path = Path("pyproject.toml")
     content = pyproject_path.read_text()
-    
+
     # Update version in pyproject.toml
     new_content = re.sub(
         r'version = "[^"]+"',
@@ -1518,7 +1518,7 @@ def update_version_in_file(new_version):
         content
     )
     pyproject_path.write_text(new_content)
-    
+
     # Update __init__.py if it exists and has a hardcoded version
     init_files = list(Path("src").rglob("__init__.py"))
     for init_file in init_files:
@@ -1546,20 +1546,20 @@ def main():
         action="store_true",
         help="Show what would be done without making changes"
     )
-    
+
     args = parser.parse_args()
-    
+
     try:
         current_version = get_current_version()
         new_version = bump_version(current_version, args.bump_type)
-        
+
         print(f"Current version: {current_version}")
         print(f"New version: {new_version}")
-        
+
         if args.dry_run:
             print("Dry run - no changes made")
             return
-        
+
         update_version_in_file(new_version)
         print(f"Version updated to {new_version}")
         print("Don't forget to:")
@@ -1567,7 +1567,7 @@ def main():
         print("2. Commit the version change: git add . && git commit -m 'Bump version to {new_version}'")
         print("3. Publish using Duty: uv run duty publish-test (then uv run duty publish-prod)")
         print("4. Or create a git tag manually: git tag v{new_version} && git push --tags"))
-        
+
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -1647,10 +1647,10 @@ update_changelog() {
     local version="$1"
     local summary="$2"
     local date=$(date +%Y-%m-%d)
-    
+
     # Create temporary file
     local temp_file=$(mktemp)
-    
+
     # Read the changelog and insert new entry
     awk -v version="$version" -v date="$date" -v summary="$summary" '
     /^## \[Unreleased\]/ {
@@ -1676,10 +1676,10 @@ update_changelog() {
     }
     { print }
     ' CHANGELOG.md > "$temp_file"
-    
+
     # Replace original file
     mv "$temp_file" CHANGELOG.md
-    
+
     echo_info "Updated CHANGELOG.md with version $version"
 }
 
@@ -1772,18 +1772,18 @@ fi
 
 if [[ $? -eq 0 ]]; then
     echo_info "Upload successful!"
-    
+
     # Commit changelog update
     echo_info "Committing CHANGELOG.md update..."
     git add CHANGELOG.md
     git commit -m "Update CHANGELOG.md for v$CURRENT_VERSION"
-    
+
     # Create and push git tag
     echo_info "Creating git tag v$CURRENT_VERSION..."
     git tag "v$CURRENT_VERSION"
     git push origin "v$CURRENT_VERSION"
     git push origin "$(git branch --show-current)"
-    
+
     echo_info "Package published successfully!"
     if [[ "$TARGET_REPO" == "testpypi" ]]; then
         echo_info "Test installation: pip install --index-url https://test.pypi.org/simple/ your-package-name"
@@ -1956,15 +1956,15 @@ __all__ = ["main_function", "helper_function", "__version__", "configure_logging
 def configure_logging(level="INFO", format_string=None, file_path=None):
     """
     Configure logging for users of this package.
-    
+
     This function allows users to enable and customize logging when using
     this package as a library.
-    
+
     Args:
         level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         format_string (str): Custom format string for log messages
         file_path (str): Optional file path to write logs to
-        
+
     Example:
         >>> import my_package
         >>> my_package.configure_logging(level="DEBUG")
@@ -1972,7 +1972,7 @@ def configure_logging(level="INFO", format_string=None, file_path=None):
     """
     # Enable logging for this package
     logger.enable("my_package")
-    
+
     # Default format if none provided
     if format_string is None:
         format_string = (
@@ -1981,7 +1981,7 @@ def configure_logging(level="INFO", format_string=None, file_path=None):
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
             "<level>{message}</level>"
         )
-    
+
     # Add console handler
     logger.add(
         sink=lambda msg: print(msg, end=""),
@@ -1989,7 +1989,7 @@ def configure_logging(level="INFO", format_string=None, file_path=None):
         level=level,
         filter=lambda record: record["name"].startswith("my_package")
     )
-    
+
     # Add file handler if requested
     if file_path:
         logger.add(
@@ -2012,27 +2012,27 @@ from loguru import logger
 def main_function(data: str) -> str:
     """
     Main function that demonstrates proper logging usage.
-    
+
     Args:
         data: Input data to process
-        
+
     Returns:
         Processed data
     """
     logger.info("Starting main_function with data: {}", data)
-    
+
     try:
         # Simulate some processing
         if not data:
             logger.warning("Empty data provided, using default")
             data = "default_value"
-        
+
         result = data.upper()
         logger.debug("Processed data: {}", result)
-        
+
         logger.success("Successfully processed data")
         return result
-        
+
     except Exception as e:
         logger.error("Error processing data: {}", e)
         logger.exception("Full traceback:")
@@ -2042,22 +2042,22 @@ def main_function(data: str) -> str:
 def calculate_fibonacci(n: int) -> int:
     """Calculate the nth Fibonacci number with logging."""
     logger.debug("Calculating fibonacci for n={}", n)
-    
+
     if n < 0:
         logger.error("Negative input not supported: {}", n)
         raise ValueError("Fibonacci sequence not defined for negative numbers")
-    
+
     if n <= 1:
         logger.trace("Base case: fibonacci({}) = {}", n, n)
         return n
-    
+
     # Log for larger computations
     if n > 10:
         logger.info("Computing fibonacci({}) - this may take a moment", n)
-    
+
     result = calculate_fibonacci(n - 1) + calculate_fibonacci(n - 2)
     logger.debug("fibonacci({}) = {}", n, result)
-    
+
     return result
 ```
 
@@ -2077,25 +2077,25 @@ from . import __version__, configure_logging
 @click.group()
 @click.version_option(version=__version__, prog_name="my-package")
 @click.option(
-    "--verbose", "-v", 
-    count=True, 
+    "--verbose", "-v",
+    count=True,
     help="Increase verbosity (use -v, -vv, or -vvv)"
 )
 @click.option(
-    "--log-file", 
+    "--log-file",
     type=click.Path(path_type=Path),
     help="Write logs to file"
 )
 @click.option(
-    "--quiet", "-q", 
-    is_flag=True, 
+    "--quiet", "-q",
+    is_flag=True,
     help="Suppress all output except errors"
 )
 @click.pass_context
 def cli(ctx: click.Context, verbose: int, log_file: Path, quiet: bool) -> None:
     """My Package CLI - A brief description of what it does."""
     ctx.ensure_object(dict)
-    
+
     # Configure logging based on verbosity
     if quiet:
         level = "ERROR"
@@ -2105,13 +2105,13 @@ def cli(ctx: click.Context, verbose: int, log_file: Path, quiet: bool) -> None:
         level = "DEBUG"
     else:  # verbose >= 2
         level = "TRACE"
-    
+
     # When used as CLI application, enable logging
     logger.enable("my_package")
-    
+
     # Remove default handler to avoid duplicates
     logger.remove()
-    
+
     # Add console handler with appropriate level
     if not quiet:
         logger.add(
@@ -2120,7 +2120,7 @@ def cli(ctx: click.Context, verbose: int, log_file: Path, quiet: bool) -> None:
             level=level,
             colorize=True
         )
-    
+
     # Add file handler if specified
     if log_file:
         logger.add(
@@ -2131,7 +2131,7 @@ def cli(ctx: click.Context, verbose: int, log_file: Path, quiet: bool) -> None:
             retention="1 week"
         )
         logger.info("Logging to file: {}", log_file)
-    
+
     # Store configuration for subcommands
     ctx.obj["verbose"] = verbose
     ctx.obj["quiet"] = quiet
@@ -2155,14 +2155,14 @@ def hello(verbose: bool) -> None:
 def fibonacci(number: int) -> None:
     """Calculate Fibonacci number with detailed logging."""
     from .core import calculate_fibonacci
-    
+
     logger.info("Starting fibonacci calculation for n={}", number)
-    
+
     try:
         result = calculate_fibonacci(number)
         click.echo(f"Fibonacci({number}) = {result}")
         logger.success("Fibonacci calculation completed successfully")
-        
+
     except ValueError as e:
         logger.error("Invalid input: {}", e)
         click.echo(f"Error: {e}", err=True)
@@ -2237,15 +2237,15 @@ def test_logging_can_be_enabled(capfd):
     """Test that logging can be enabled for library usage."""
     # Enable logging to stderr
     configure_logging(level="DEBUG")
-    
+
     try:
         main_function("test")
         captured = capfd.readouterr()
-        
+
         # Should now see log output
         assert "Starting main_function" in captured.out
         assert "Successfully processed" in captured.out
-        
+
     finally:
         # Clean up - disable logging again
         logger.disable("my_package")
@@ -2254,7 +2254,7 @@ def test_logging_can_be_enabled(capfd):
 def test_logging_with_invalid_input():
     """Test logging behavior with invalid input."""
     configure_logging(level="DEBUG")
-    
+
     try:
         with pytest.raises(ValueError):
             calculate_fibonacci(-1)
@@ -2272,15 +2272,15 @@ def temp_log_file(tmp_path):
 def test_file_logging(temp_log_file):
     """Test logging to file."""
     configure_logging(level="INFO", file_path=str(temp_log_file))
-    
+
     try:
         main_function("test")
-        
+
         # Check that log file was created and contains expected content
         assert temp_log_file.exists()
         log_content = temp_log_file.read_text()
         assert "Starting main_function" in log_content
-        
+
     finally:
         logger.disable("my_package")
 ```
@@ -2313,7 +2313,7 @@ uv run pytest tests/test_logging.py -v -s
 
 **Testing and Quality:**
 - `uv run duty test` - Run tests with coverage (aliases: `t`)
-- `uv run duty check-quality` - Format and lint code (aliases: `lint`)  
+- `uv run duty check-quality` - Format and lint code (aliases: `lint`)
 - `uv run duty check-all` - Run all quality checks and tests
 - `uv run duty ci` - Full CI pipeline locally
 
@@ -2336,7 +2336,7 @@ uv run pytest tests/test_logging.py -v -s
 
 Using Duty instead of shell scripts provides several advantages:
 
-**✅ Platform Independence:** 
+**✅ Platform Independence:**
 - Works identically on Windows (PowerShell), macOS (zsh/bash), and Linux (bash)
 - No need for separate `.bat` files or shell-specific syntax
 
