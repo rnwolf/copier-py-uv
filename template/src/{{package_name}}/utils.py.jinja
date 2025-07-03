@@ -104,7 +104,7 @@ def load_environment_variables(env_file: str | Path | None = None) -> dict[str, 
         return loaded_vars
 
     try:
-        with open(env_file, "r", encoding="utf-8") as f:
+        with open(env_file, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
 

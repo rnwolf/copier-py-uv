@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed import sorting in all template files to prevent Ruff I001 errors
 - Properly grouped imports by standard library, third-party, and local modules
 - Added blank lines between import groups for better readability
+- Added additional tips to the templated agents document
+- Fixed a a number of Ruff related issues such as sorted imports and end of file newlines.
 
 ## [0.2.0] - 2024-07-03
 
@@ -25,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed `.copier-answers.yml` generation to properly record all project metadata using `{{_copier_answers|to_nice_yaml}}`
 - Fixed deprecated typing imports that caused linting errors:
   - `typing.List` → `list`
-  - `typing.Dict` → `dict` 
+  - `typing.Dict` → `dict`
   - `typing.Tuple` → `tuple`
   - `Optional[X]` → `X | None`
   - `Union[X, Y]` → `X | Y`

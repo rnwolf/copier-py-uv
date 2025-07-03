@@ -19,8 +19,8 @@ This project follows the **src layout** pattern for better import handling and t
 ├── tests/                      # Test suite (mirrors src structure)
 ├── docs/                       # Documentation{% if include_docs %} (MkDocs){% endif %}
 ├── scripts/                    # Utility scripts
-├── pyproject.toml             # Project configuration
-└── duties.py                  # Task automation
+├── pyproject.toml              # Project configuration
+└── duties.py                   # Task automation
 ```
 
 ## Development Practices
@@ -104,6 +104,14 @@ This project follows the **src layout** pattern for better import handling and t
 - Use fixtures for common test data
 - Test both success and failure cases
 
+### Test Organization
+- Mirror source structure in tests
+- Use descriptive test names: `test_should_return_empty_list_when_no_items_found`
+- Group related tests in classes
+- Use fixtures for common test data
+- Mark tests appropriately (`@pytest.mark.slow`, `@pytest.mark.integration`)
+- Use `pytest.mark.parametrize` for multiple test cases
+
 ## Development Workflow
 
 1. **Setup**: `uv venv && source .venv/bin/activate && uv pip install -e ".[dev]"`
@@ -114,6 +122,11 @@ This project follows the **src layout** pattern for better import handling and t
 6. **Build**: `duty build`
 
 ## Common Tasks
+
+### TDD Workflow
+1. **Red**: Write a failing test first
+2. **Green**: Write minimal code to make it pass
+3. **Refactor**: Improve code while keeping tests green
 
 ### Adding a New Feature
 1. Write tests first (TDD approach)
@@ -136,14 +149,27 @@ This project follows the **src layout** pattern for better import handling and t
 
 When working on this project:
 
-1. **Always run tests** after making changes
-2. **Follow the existing code style** and patterns
-3. **Add type hints** to all new functions
-4. **Write docstrings** for public APIs
-5. **Update tests** when modifying functionality
-6. **Consider backwards compatibility** when changing public APIs
-7. **Use the project's logging** instead of print statements
-8. **Follow the import conventions** listed above
+1. **Always use src layout** - Prevents import issues during testing
+2. **Write tests first** - Follow TDD religiously
+3. **Always run tests** after making changes
+4. **Follow the existing code style** and patterns
+5. **Add type hints** to all new functions
+6. **Write docstrings** for public APIs
+7. **Document public APIs** - Include examples in docstrings
+8. **Keep functions small** - Single responsibility principle
+9. **Use dependency injection** - Makes code testable
+10. **Update tests** when modifying functionality
+11. **Test edge cases** - Empty inputs, None values, boundary conditions
+12. **Mock external dependencies** - Keep tests fast and reliable
+13. **Use meaningful assertions** - Prefer specific assertions over generic ones
+14. **Consider backwards compatibility** when changing public APIs
+15. **Use the project's logging** instead of print statements
+16. **Proper logging strategy** - Disable logging by default for libraries, enable for CLI applications
+17. **Follow the import conventions** listed above
+18. **Configuration**: Use environment variables or config files, not hardcoded values
+19. **Version consistency** - Ensure version numbers match across package files and CLI
+20. **Version pin development dependencies** - Ensures consistent development environment
+
 
 ## Dependencies
 
@@ -156,6 +182,148 @@ When working on this project:
 {% if use_ruff %}- `ruff`: Linting and formatting{% endif %}
 {% if use_pyright %}- `pyright`: Type checking{% endif %}
 - `duty`: Task automation
+
+### Publishing Workflow
+
+#### 1. Development Release Cycle
+```bash
+# Make changes and commit
+git add .
+git commit -m "Add new feature"
+
+# Bump version (patch for bug fixes, minor for features, major for breaking changes)
+uv run duty bump-version patch
+
+# Commit version bump
+git add .
+git commit -m "Bump version to $(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")"
+
+# Test publish to Test PyPI first (includes tests, quality checks, and documentation build)
+uv run duty publish-test
+
+# If everything looks good, publish to production PyPI
+uv run duty publish-prod
+```
+
+#### 2. Manual Version Management
+```bash
+# Check current version
+python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])"
+
+# Dry run version bump
+python scripts/bump-version.py --dry-run patch
+
+# Actually bump version using Duty
+uv run duty bump-version minor
+
+# List all available Duty tasks
+uv run duty --list
+
+# Get help for specific tasks
+uv run duty --help publish-test
+```
+
+#### 3. Quality Assurance Workflow
+```bash
+# Run full CI pipeline locally before pushing
+uv run duty ci
+
+# Run individual checks
+uv run duty test                    # Tests with coverage
+uv run duty check-quality          # Code formatting and linting
+uv run duty build-docs             # Documentation build
+uv run duty clean                  # Clean up artifacts
+
+# Debug specific functionality
+uv run duty debug-fibonacci n=15   # Interactive debugging
+```
+
+### Pre-publication Checklist
+
+Before publishing, ensure:
+- [ ] All tests pass: `uv run duty test`
+- [ ] Code quality checks pass: `uv run duty check-quality`
+- [ ] Version number is appropriate for changes
+- [ ] CHANGELOG.md is updated (if you maintain one)
+- [ ] README.md is up to date
+- [ ] Documentation is built and reviewed: `uv run duty build-docs`
+- [ ] All changes are committed
+- [ ] LICENSE.md is present and up to date
+- [ ] You're on the correct branch (main/master)
+
+## Development with Duty Task Runner
+
+### Available Duty Tasks
+
+**Setup and Environment:**
+- `uv run duty setup-dev` - Set up development environment
+- `uv run duty clean` - Clean build artifacts and cache files
+
+**Testing and Quality:**
+- `uv run duty test` - Run tests with coverage (aliases: `t`)
+- `uv run duty check-quality` - Format and lint code (aliases: `lint`)
+- `uv run duty check-all` - Run all quality checks and tests
+- `uv run duty ci` - Full CI pipeline locally
+
+**Documentation:**
+- `uv run duty docs` - Serve documentation locally (default: port 8000)
+- `uv run duty build-docs` - Build documentation for production
+- `uv run duty deploy-docs` - Deploy documentation to GitHub Pages
+
+**Version and Publishing:**
+- `uv run duty bump-version [major|minor|patch]` - Bump version number
+- `uv run duty build-package` - Build package for distribution
+- `uv run duty publish-test` - Publish to Test PyPI
+- `uv run duty publish-prod` - Publish to production PyPI
+
+**Development Tools:**
+- `uv run duty debug-fibonacci [n=10]` - Interactive debugging session
+- `uv run duty pre-commit-run` - Run pre-commit hooks
+
+### Cross-Platform Benefits
+
+Using Duty instead of shell scripts provides several advantages:
+
+**✅ Platform Independence:**
+- Works identically on Windows (PowerShell), macOS (zsh/bash), and Linux (bash)
+- No need for separate `.bat` files or shell-specific syntax
+
+**✅ Python Integration:**
+- Direct access to Python APIs and tools
+- Consistent error handling and logging
+- Type hints and IDE support for task parameters
+
+**✅ Rich Features:**
+- Built-in progress indicators and colored output
+- Parameter validation and help text
+- Task dependencies and pre/post hooks
+- Flexible output formatting
+
+**✅ Development Experience:**
+- `uv run duty --list` shows all available tasks
+- `uv run duty --help task-name` provides detailed help
+- Consistent interface across all development operations
+
+### Task Examples with Parameters
+
+```bash
+# Test with different configurations
+uv run duty test coverage=false           # Skip coverage
+uv run duty test parallel=false verbose=true  # Sequential, verbose
+
+# Documentation with custom port
+uv run duty docs port=8080
+
+# Quality checks with auto-fix
+uv run duty check-quality fix=true
+
+# Debug with specific input
+uv run duty debug-fibonacci n=20
+
+# Pre-commit on all files
+uv run duty pre-commit-run all-files=true
+```
+
 
 ## Resources
 

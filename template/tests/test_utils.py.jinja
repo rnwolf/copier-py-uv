@@ -3,18 +3,18 @@
 {% if use_pytest %}import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import mock_open, patch
 
 import pytest
 
 from {{ package_name }}.utils import (
     configure_logging,
+    ensure_directory,
+    flatten_dict,
+    format_file_size,
     get_project_root,
     load_environment_variables,
-    ensure_directory,
     safe_file_write,
-    format_file_size,
-    flatten_dict,
 )
 
 

@@ -3,10 +3,10 @@
 {% if use_pytest %}import pytest
 
 from {{ package_name }}.core import (
-    main_function,
     calculate_statistics,
-    validate_input,{% if include_cli %}
+    main_function,{% if include_cli %}
     process_data,{% endif %}
+    validate_input,
 )
 
 

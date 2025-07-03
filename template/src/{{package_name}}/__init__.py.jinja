@@ -15,4 +15,5 @@ __all__ = [
 
 # Configure logging to be quiet by default when used as a library
 import logging
+
 logging.getLogger("{{ package_name }}").addHandler(logging.NullHandler())

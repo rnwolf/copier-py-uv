@@ -26,11 +26,13 @@ uv add {{ project_slug }}
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    uv pip install -e ".[dev]"
    ```
+   or `uv run duty setup-dev`
 
 3. Set up pre-commit hooks:
    ```bash
    {% if include_pre_commit %}pre-commit install{% else %}# Pre-commit not configured{% endif %}
    ```
+
 
 ## Usage
 

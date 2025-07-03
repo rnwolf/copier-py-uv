@@ -4,16 +4,13 @@ This file defines tasks that can be run with the `duty` command.
 Run `duty --list` to see all available tasks.
 """
 
-import os
 import sys
-from pathlib import Path
-from typing import Optional
 
-from duty import duty
+from duty import context, duty
 
 
 @duty
-def setup(ctx):
+def setup(ctx: context.Context):
     """Set up the development environment."""
     ctx.run("uv venv", title="Creating virtual environment")
     ctx.run("uv pip install -e '.[dev{% if include_docs %},docs{% endif %}]'", title="Installing dependencies")
@@ -23,7 +20,7 @@ def setup(ctx):
 
 
 @duty
-def clean(ctx):
+def clean(ctx: context.Context):
     """Clean up build artifacts and cache files."""
     patterns = [
         "build/",
@@ -47,7 +44,7 @@ def clean(ctx):
 
 
 {% if use_pytest %}@duty
-def test(ctx, coverage: bool = True, parallel: bool = True, verbose: bool = False):
+def test(ctx: context.Context, coverage: bool = True, parallel: bool = True, verbose: bool = False):
     """Run the test suite.
 
     Args:
@@ -71,25 +68,25 @@ def test(ctx, coverage: bool = True, parallel: bool = True, verbose: bool = Fals
 
 
 @duty
-def test_fast(ctx):
+def test_fast(ctx: context.Context):
     """Run tests without coverage or parallel execution."""
     test(ctx, coverage=False, parallel=False)
 
 
 @duty
-def test_unit(ctx):
+def test_unit(ctx: context.Context):
     """Run only unit tests."""
     ctx.run("pytest -m unit", title="Running unit tests")
 
 
 @duty
-def test_integration(ctx):
+def test_integration(ctx: context.Context):
     """Run only integration tests."""
     ctx.run("pytest -m integration", title="Running integration tests")
 
 
 @duty
-def test_slow(ctx):
+def test_slow(ctx: context.Context):
     """Run all tests including slow ones."""
     ctx.run("pytest -m 'not slow'", title="Running all tests except slow ones")
     ctx.run("pytest -m slow", title="Running slow tests")
@@ -115,7 +112,7 @@ def lint(ctx, fix: bool = False):
 
 
 @duty
-def format_code(ctx, check: bool = False):
+def format_code(ctx: context.Context, check: bool = False):
     """Format code with ruff.
 
     Args:
@@ -137,7 +134,7 @@ def typecheck(ctx):
 
 
 @duty
-def check(ctx):
+def check(ctx: context.Context):
     """Run all quality checks."""
     {% if use_ruff %}lint(ctx)
     format_code(ctx, check=True){% endif %}
@@ -147,7 +144,7 @@ def check(ctx):
 
 
 @duty
-def build(ctx):
+def build(ctx: context.Context):
     """Build the package."""
     clean(ctx)
     ctx.run("uv build", title="Building package")
@@ -155,7 +152,7 @@ def build(ctx):
 
 
 @duty
-def build_docs(ctx):
+def build_docs(ctx: context.Context):
     """Build documentation."""
     {% if include_docs %}ctx.run("mkdocs build", title="Building documentation")
     print("✅ Documentation built successfully!")
@@ -164,7 +161,7 @@ def build_docs(ctx):
 
 
 @duty
-def serve_docs(ctx, port: int = 8000):
+def serve_docs(ctx: context.Context, port: int = 8000):
     """Serve documentation locally.
 
     Args:
@@ -184,14 +181,14 @@ def _get_current_version() -> str:
 
 
 @duty
-def version(ctx):
+def version(ctx: context.Context):
     """Show current version."""
     current_version = _get_current_version()
     print(f"Current version: {current_version}")
 
 
 @duty
-def bump_version(ctx, part: str = "patch"):
+def bump_version(ctx: context.Context, part: str = "patch"):
     """Bump version using the bump-version script.
 
     Args:
@@ -211,7 +208,7 @@ def bump_version(ctx, part: str = "patch"):
 
 
 @duty
-def publish_test(ctx):
+def publish_test(ctx: context.Context):
     """Publish package to Test PyPI."""
     build(ctx)
     ctx.run("uv publish --publish-url https://test.pypi.org/legacy/", title="Publishing to Test PyPI")
@@ -234,20 +231,20 @@ def publish(ctx):
 
 
 @duty
-def install_local(ctx):
+def install_local(ctx: context.Context):
     """Install the package locally in development mode."""
     ctx.run("uv pip install -e .", title="Installing package locally")
     print("✅ Package installed locally!")
 
 
 @duty
-def uninstall(ctx):
+def uninstall(ctx: context.Context):
     """Uninstall the package."""
     ctx.run("uv pip uninstall {{ project_slug }}", title="Uninstalling package")
 
 
 @duty
-def deps_update(ctx):
+def deps_update(ctx: context.Context):
     """Update dependencies."""
     ctx.run("uv pip install --upgrade pip", title="Updating pip")
     ctx.run("uv pip install -e '.[dev{% if include_docs %},docs{% endif %}]' --upgrade", title="Updating dependencies")
@@ -256,20 +253,20 @@ def deps_update(ctx):
 
 
 @duty
-def deps_list(ctx):
+def deps_list(ctx: context.Context):
     """List installed dependencies."""
     ctx.run("uv pip list", title="Installed packages")
 
 
 @duty
-def security_check(ctx):
+def security_check(ctx: context.Context):
     """Run security checks on dependencies."""
     ctx.run("uv pip install safety", title="Installing safety", nofail=True)
     ctx.run("safety check", title="Running security check")
 
 
 {% if include_cli %}@duty
-def demo(ctx):
+def demo(ctx: context.Context):
     """Run a demo of the CLI functionality."""
     print("🎯 Running {{ project_name }} demo...")
 
@@ -293,7 +290,7 @@ def demo(ctx):
 
 
 @duty
-def dev_server(ctx):
+def dev_server(ctx: context.Context):
     """Start development server (if applicable)."""
     print("🚀 Starting development environment...")
     {% if include_cli %}print("💡 Try running: {{ project_slug }} --help"){% endif %}
@@ -302,7 +299,7 @@ def dev_server(ctx):
 
 
 @duty
-def ci(ctx):
+def ci(ctx: context.Context):
     """Run CI pipeline locally."""
     print("🔄 Running CI pipeline...")
 
@@ -319,7 +316,7 @@ def ci(ctx):
 
 
 @duty
-def release(ctx, part: str = "patch"):
+def release(ctx: context.Context, part: str = "patch"):
     """Create a new release.
 
     Args:
@@ -345,7 +342,7 @@ def release(ctx, part: str = "patch"):
 
 
 @duty
-def help_extended(ctx):
+def help_extended(ctx: context.Context):
     """Show extended help with examples."""
     print("🔧 {{ project_name }} Development Tasks")
     print("=" * 50)
@@ -379,6 +376,6 @@ def help_extended(ctx):
 
 # Set default task
 @duty(default=True)
-def default(ctx):
+def default(ctx: context.Context):
     """Show help by default."""
     help_extended(ctx)
